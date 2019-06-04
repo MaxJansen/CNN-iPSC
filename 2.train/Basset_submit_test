@@ -1,0 +1,34 @@
+test##################################################################
+### This tests trained neural network architectures, based on four    ###
+### input files                                                ###
+##################################################################
+
+#Also, this script was written in Atom on a windows pc.
+#To convert it to a unix-runable format use: sed -i 's/\r$//' filename
+#Go to directory containing the trained models q
+cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/training_CNN
+
+#Make directories for all training of four categories
+mkdir original_chr1chr2/AUC_per_feature
+mkdir original_random/AUC_per_feature
+mkdir 1CPM_chr1chr2/AUC_per_feature
+mkdir 1CPM_random/AUC_per_feature
+
+##################################################################
+### This submits scripts in basset_test to the cluster        ###
+##################################################################
+
+#stay in directory with the categories and submit these scripts to the cluster
+
+#!/bin/bash
+#original chr1chr2
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N original_test -e original_test.err -o original_test.out original_chr1chr2/Basset_test.sh
+
+#original random
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N original_random_test -e original_random_test.err -o original_random_test.out original_random/Basset_test.sh
+
+#1CPM chr1chr2
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N one_CPM_chr1chr2_test -e 1CPM_chr1chr2_test.err -o 1CPM_chr1chr2_test.out 1CPM_chr1chr2/Basset_test.sh
+
+#1CPM original
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N one_CPM_random_test -e 1CPM_random_test.err -o 1CPM_random_test.out 1CPM_random/Basset_test.sh

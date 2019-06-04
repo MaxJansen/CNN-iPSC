@@ -1,0 +1,8 @@
+##################################################################
+### This submits scripts in Basset_motif.sh to the cluster.    ###
+### That script calls Basset_motifs.py, which actually detects.###
+##################################################################
+
+#!/bin/bash
+#Test motifs
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N test_motifs -e test_motifs.err -o test_motifs.out Basset_test_motifs.sh
