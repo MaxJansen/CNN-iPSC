@@ -8,6 +8,7 @@
 
 library("plyr")
 library("tidyr")
+library("pheatmap")
 
 ###    Part one: Preparation    ###
 
@@ -78,8 +79,11 @@ ann_qselect2$Query.ID <- gsub("filter", "f", ann_qselect2$Query.ID)
 rownames(ann_qselect2) <- paste(ann_qselect2$Query.ID, ann_qselect2$motifname, sep = " ")
 ann_qselect2 <- ann_qselect2[, -c(1:4)]
 ann_qselect2 <- as.matrix(ann_qselect2)
+rownames(ann_qselect2) <- unlist(strsplit(rownames(ann_qselect2), split = '_', fixed = TRUE))[seq(1,2*length(rownames(ann_qselect2)),2)]
+
 
 heatmap.2(ann_qselect2, col = redblue, dendrogram = "row", Colv = NA, key= T, cexRow = 0.6, margins = c(4,13), density.info = "none", keysize = 1)
+pheatmap(ann_qselect2, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
 
 ###    Make a barplot of std (influence per filter)    ###
 bar_select <- ann_complete[, c(1:4)]
