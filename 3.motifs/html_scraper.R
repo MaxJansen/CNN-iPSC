@@ -1,4 +1,4 @@
-### This script gets the useful information out of the html file. 
+### This script gets the useful information out of the html file.
 ### First cut out the json part. Between first <script> and next <\script>
 ### Get the var data = {X} part and save this as a .json file.
 

@@ -12,9 +12,9 @@ evalueFormat <- function(inFile, outFile) {
   nuc_vals <- paste(" ", nuc_vals)
   nuc_vals <- gsub("*\t", "\t ", nuc_vals)
   line[nuc_lines] <- nuc_vals
-  line <- paste(line, "\t", sep="")
+  line <- paste(line, "\t", sep = "")
   line <- gsub("E= NA", "E= 0", line)
-  fileConn<-file(outFile)
+  fileConn <- file(outFile)
   writeLines(line, fileConn)
   close(fileConn)
 }
@@ -22,11 +22,12 @@ evalueFormat <- function(inFile, outFile) {
 #parse command line argument and run this function
 
 args = commandArgs(trailingOnly = TRUE)
-if (length(args)!=2) {
-  stop("Need input and output file name, e-val = NA ===> e-val = 0\n",call. = TRUE)
+if (length(args) != 2) {
+  stop("Need input and output file name, e-val = NA ===> e-val = 0\n",
+       call. = TRUE)
 } else {
-  inFile=args[1]
-  outFile=args[2]
+  inFile = args[1]
+  outFile = args[2]
 }
 
-evalueFormat(inFile,outFile)
+evalueFormat(inFile, outFile)

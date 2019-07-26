@@ -40,6 +40,26 @@ cor_matrix = matrix()
 result <- WGCNA::cor(t(module_agg), t(ann_qselect), method = "pearson")
 pheatmap(result, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
 
+# Calculate correlations with all filters
+#Import the influence per stage
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/motif_original_random")
+table_target <- read.table("table_target.txt", header = FALSE)
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/homer_comparison/")
+table_target <- table_target[,-2]
+table_target <- tidyr::spread(table_target, V3, V4)
+colnames(table_target)[1] <- "Query.ID"
+table_target$Query.ID <- paste0("filter",table_target$Query.ID)
+table_target <- table_target[, c(1,6,3,9,8,7,5,4,2)]
+rownames(table_target) <- table_target$Query.ID
+table_target$Query.ID <- NULL
+
+cor_matrix = matrix()
+result_all <- WGCNA::cor(t(module_agg), t(table_target), method = "pearson")
+result_all %>% select_if(~sum(!is.na(.)) > 0)
+
+pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
+
+
 #Redo, with filter names only (so remove TF names), this means you need a smaller table first:
 ann_slimmed <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
 ann_qselect$row <- ann_slimmed
@@ -57,8 +77,13 @@ pheatmap(result_slim, color = colorRampPalette(c("navy", "white", "red"))(30), c
 module_agg_select <- module_agg[c("black","green","red","turquoise"),]
 cor_matrix_select = matrix()
 result_select <- WGCNA::cor(t(module_agg_select), t(ann_slimdf), method = "pearson")
+all_select <- WGCNA::cor(t(module_agg_select), t(table_target), method = "pearson")
+
 pheatmap(result_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
+pheatmap(all_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
+
 ### To make lineplots of overlap, you need identical stage names, for the CNNs, convert stage ###
+
 ### names to 2-letter names ###
 colnames(ann_qselect)[3] <- "GT"
 colnames(ann_qselect)[4] <- "PF"

@@ -7,8 +7,8 @@ nuc_vals <- line[nuc_lines]
 nuc_vals <- paste(" ", nuc_vals)
 nuc_vals <- gsub("*\t", "\t ", nuc_vals)
 line[nuc_lines] <- nuc_vals
-line <- paste(line, "\t", sep="")
+line <- paste(line, "\t", sep = "")
 
-fileConn<-file("PWMs_final.meme")
+fileConn <- file("PWMs_final.meme")
 writeLines(line, fileConn)
 close(fileConn)
