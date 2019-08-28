@@ -1,0 +1,80 @@
+########## precision-recall curves - on test set in preprocessing directory
+cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/neg_training_CNN/original_chr1chr2
+grep -A 1 -w chr1 learn_islets.chr1_2.fa > test_set.chr1.fa
+
+# Go to model directory
+cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/neg_training_CNN/original_chr1chr2
+
+mkdir test_set_predictions
+
+###Submit the following to gpu:
+##### load torch modules & dependencies
+module load torch/20170221-p100-gcc5.4.0
+module load python/2.7.10-gcc4.9.3
+export BEDTOOLS=/apps/well/bedtools/2.24.0/
+export PATH=$BEDTOOLS:$PATH
+export BASSETDIR=/well/got2d/agata/Basset/
+export PATH=$BASSETDIR/src:$PATH
+export PYTHONPATH=$BASSETDIR/src:$PYTHONPATH
+export LUA_PATH="$BASSETDIR/src/?.lua;$LUA_PATH"
+export PATH=${PATH}:/well/got2d/agata/bin/weblogo/
+export PATH=${PATH}:/apps/well/meme/4.11.2_2/bin
+
+for i in {1..5}; do
+ printf "Running predictions on: $i\n"
+ nohup basset_predict.py --cudnn original.iter$i\_best.th /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/chr1chr2/test_set.chr1.fa test_set_predictions/iter$i.test.txt
+done
+
+### In R
+act=read.table("/well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/chr1chr2/chr1_2_last.act.txt")
+act=act[grep("chr1:",rownames(act)),]
+
+features=read.table("/well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/neg_original_samples.txt")
+features=as.character(features$V1)
+
+library("PRROC")
+library(calibrate)
+
+files<-list.files(path=".", patter=".test.txt$",recursive=TRUE)
+
+cnn_res = matrix(,nrow=5, ncol=18)
+for(i in 1:length(files)){
+    df = read.table(files[i])
+    for(f in 1:length(features)){
+		   roc<-roc.curve(scores.class0 = df[,f], weights.class0 = act[,f])
+		   pr<-pr.curve(scores.class0 = df[,f], weights.class0 = act[,f])
+    	cnn_res[i,2*f-1]= roc$auc
+		cnn_res[i,2*f]= pr$auc.integral
+	}
+}
+write.table(cnn_res, file="5nets.AUC_ROC_PR.chr1.txt",sep="\t",quote=F)
+
+# find mean, min, max - ROC and PR AUC
+features=read.table("/well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/neg_original_samples.txt")
+features=as.character(features$V1)
+roc_AUC=data.frame(features=features, mean_ROC_AUC=apply(cnn_res, 2, mean)[seq(from=1,to=17,by=2)], min_ROC_AUC=apply(cnn_res, 2, min)[seq(from=1,to=17,by=2)], max_ROC_AUC=apply(cnn_res, 2, max)[seq(from=1,to=17,by=2)], sd_ROC_AUC=apply(cnn_res, 2, sd)[seq(from=1,to=17,by=2)])
+pr_AUC=data.frame(features=features, mean_ROC_AUC=apply(cnn_res, 2, mean)[seq(from=2,to=18,by=2)], min_ROC_AUC=apply(cnn_res, 2, min)[seq(from=2,to=18,by=2)], max_ROC_AUC=apply(cnn_res, 2, max)[seq(from=2,to=18,by=2)], sd_ROC_AUC=apply(cnn_res, 2, sd)[seq(from=2,to=18,by=2)])
+
+write.table(cbind(roc_AUC, pr_AUC), file="5nets.AUC_summary.txt", sep="\t",quote=F,row.names=F)
+
+## find the best overall performing network and plot the representative ROC and PR curves for each feature
+## best in terms of PR:
+apply(cnn_res[,seq(2,16,2)],1,mean)
+#0.7489107 0.7437381 0.7442273 0.7529314 0.7486526
+
+#4th model has the best score!
+
+files[4]
+# "iter4.test.txt"
+
+iter1=read.table("iter4.test.txt")
+pdf("iter4.test.roc_pr.pdf")
+for(f in 1:length(features)){
+	roc<-roc.curve(scores.class0 = iter1[,f], weights.class0 = act[,f], curve=T, max.compute = T, min.compute = T, rand.compute = T)
+	pr<-pr.curve(scores.class0 = iter1[,f], weights.class0 = act[,f], curve=T, max.compute = T, min.compute = T, rand.compute = T)
+
+	plot(roc, rand.plot = TRUE, auc.main=T, main=paste0(features[f]," ROC"))
+	plot(pr, rand.plot = TRUE,auc.main=T, main=paste0(features[f]," PR"))
+
+}
+dev.off()

@@ -19,20 +19,23 @@ setwd("~/Oxford 2.0/Scripts/CNN_project/Data/motif_original_random")
 
 #Procedure for model, read table and select annotated rows. Select top 20.
 table_standard <- read.table("table.txt")
-standard_annon <- table_standard[table_standard$annotation != ".",]
+standard_annon <- table_standard[table_standard$annotation != ".", ]
 standard_annon <-
-  standard_annon[order(standard_annon$std, decreasing = T),]
+  standard_annon[order(standard_annon$std, decreasing = T), ]
 standard_annon$annotation <-
   make.unique(as.character(standard_annon$annotation), sep = "_")
 standard_annon$annotation <-
-  factor(standard_annon$annotation, levels =  standard_annon$annotation[order(-standard_annon$std)])
+  factor(standard_annon$annotation, levels =  standard_annon$annotation[
+    order(-standard_annon$std)])
 standard_annon <- standard_annon[1:10, ]
 
 #Plot
 g <- ggplot(standard_annon, aes(x = annotation, y = std))
-g + geom_col(aes(fill = annotation)) + theme_minimal() + ggtitle("Annotated filter influence") +
-  xlab("Annotation") + ylab("Standard deviation") + theme(plot.title = element_text(hjust = 0.5))
-
+g +  geom_bar(stat = "identity", fill = "steelblue") + theme_minimal() +
+ggtitle("Annotated filter influence") + geom_text(aes(label = std),
+            vjust = 1.6,
+            color = "white",
+            size = 3.5) + theme(plot.title = element_text(hjust = 0.5))
 
 
 #Import the influence per stage
