@@ -8,6 +8,7 @@
 
 library("plyr")
 library("tidyr")
+library("stringr")
 library("pheatmap")
 
 ###    Part one: Preparation    ###
@@ -77,6 +78,15 @@ table_target <- table_target[c("Query.ID", "iPSC", "DE", "PGT", "PFG", "PE", "EP
 ###    Part 2: Final Tables and plots    ###
 #Largest table, merge Biological TF names, filter influence and influence per stage
 #!!! Warning: you will lose unannoted filter influence per stage rows !!!
+
+# Make some general influence plots for filters
+#Plot
+g <- ggplot(standard_annon, aes(x =annotation, y = std))
+g + geom_col(aes(fill=annotation)) + theme_minimal() +scale_fill_brewer(palette = "RdYlBu") + ggtitle("Annotated filter influence") +
+  xlab("Annotation") + ylab("Standard deviation") + theme(plot.title = element_text(hjust = 0.5))
+
+
+
 ann_complete <-
   merge(
     tomtom_infl_name,
@@ -149,8 +159,8 @@ bar_select$full_name <-
 bar_select <- bar_select[, -c(1, 2, 4)]
 
 p <-
-  ggplot(data = bar_select, aes(x = full_name, y = std, fill = full_name)) +
-  geom_bar(stat = "identity") + theme_minimal()
+  ggplot(data = bar_select, aes(x = full_name, y = std, fill = "a")) +
+  geom_bar(stat = "identity") + theme_minimal() + scale_fill_manual(values = "#0072B2") 
 
 # Horizontal bar plot
-p + coord_flip()
+p + coord_flip() + theme(legend.position = "none")
