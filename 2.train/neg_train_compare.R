@@ -1,22 +1,21 @@
-cpm <- read.table("neg_1CPM_noverlap_shuf.bed", header = F)
-original <- read.table("neg_original_noverlap_shuf.bed", header = F)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
 
-cpm$V7 <- rep(0, nrow(cpm))
-original$V7 rep(0, nrow(original))
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/neg_train_compare/")
 
-write.table(
-  x = cpm,
-  file = "neg_1cpm_zeros_shuf.bed",
-  row.names = F,
-  col.names = F,
-  quote = F,
-  sep = "\t"
-)
-write.table(
-  x = original,
-  file = "neg_original_zeros_shuf.bed",
-  row.names = F,
-  col.names = F,
-  quote = F,
-  sep = "\t"
-)
+compare_input <- read.csv(file = "neg_train_compare.csv", header = TRUE, sep = ',', row.names = 1)
+compare_input <- gather(compare_input)
+p <- ggplot(compare_input,
+            aes(x = key,y = value))
+p + geom_boxplot() + theme_minimal() + labs(x = "Input", y = "AUC") +  theme(
+  axis.title.x = element_text(size = 20),
+  axis.title.y = element_text(size = 20),
+  axis.text = element_text(
+    angle = 45,
+    hjust = 1,
+    vjust = 0.9)
+)  
+
+

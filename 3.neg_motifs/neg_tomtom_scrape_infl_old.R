@@ -10,14 +10,12 @@ library("plyr")
 library("tidyr")
 library("stringr")
 library("pheatmap")
-library(superheat)
-library(RColorBrewer)
 
 ###    Part one: Preparation    ###
 
 # Make sure you have the 4 required files (input and output for Basset_motifs.py) from a given model
 # in a single directory, then go there:
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/neg_motif_1CPM_random/")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/neg_motif_original_random/")
 #1. tomtom, this is the main matching table
 tomtom <- read.csv("tomtom.txt", header = TRUE, sep = "\t")
 colnames(tomtom)[colnames(tomtom) == "X.Query.ID"] <- "Query.ID"
@@ -31,6 +29,9 @@ filter_infl <- read.table("table.txt", header = TRUE)
 #4. Filter influence per stage:
 table_target <- read.table("table_target.txt", header = FALSE)
 
+# Steps to clean table_target
+table_target$V3 <- str_split_fixed(table_target$V3, '_', 3)[, 2]
+table_target$V3[table_target$V3 == "original"] <- "neg"
 
 #Steps to clean and merge merge tomtom and filter influence:
 filter_infl$Query.ID <- paste0("filter", row.names(filter_infl))
@@ -70,7 +71,7 @@ table_target <- table_target[,-2]
 table_target <- tidyr::spread(table_target, V3, V4)
 colnames(table_target)[1] <- "Query.ID"
 table_target$Query.ID <- paste0("filter", table_target$Query.ID)
-table_target <- table_target[c("Query.ID", "iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC", "Neg")]
+table_target <- table_target[c("Query.ID", "iPSC", "DE", "PGT", "PFG", "PE", "EP", "EN", "BLC", "neg")]
 
 ###    End of Part 1    ###
 
@@ -130,30 +131,6 @@ rownames(ann_qselect2) <-
   unlist(strsplit(rownames(ann_qselect2), split = '_', fixed = TRUE))[seq(1, 2 *
                                                                             length(rownames(ann_qselect2)), 2)]
 
-# Different qvalue threshold for heatmap
-ann_qselect3 <- ann_complete[ann_complete$q.value < 0.1, ]
-ann_qselect3 <- ann_qselect3[!duplicated(ann_qselect3$Query.ID), ]
-ann_qselect3$Query.ID <- gsub("filter", "f", ann_qselect3$Query.ID)
-rownames(ann_qselect3) <-
-  paste(ann_qselect3$Query.ID, ann_qselect3$motifname, sep = " ")
-ann_qselect3 <- ann_qselect3[, -c(1:4)]
-ann_qselect3 <- as.matrix(ann_qselect3)
-rownames(ann_qselect3) <-
-  unlist(strsplit(rownames(ann_qselect3), split = '_', fixed = TRUE))[seq(1, 2 *
-                                                                            length(rownames(ann_qselect3)), 2)]
-bar_select3 <- ann_complete[, c(1:4)]
-bar_select3 <- bar_select3[bar_select3$q.value < 0.1, ]
-bar_select3 <- bar_select3[!duplicated(bar_select3$Query.ID), ]
-bar_select3$Query.ID <- gsub("filter", "f", bar_select3$Query.ID)
-bar_select3$full_name <-
-  paste(bar_select3$Query.ID, bar_select3$motifname, sep = " ")
-bar_select3$full_name <-
-  factor(bar_select3$full_name, levels = bar_select3$full_name[order(bar_select3$std)])
-bar_select3 <- bar_select3[, -c(1, 2, 4)]
-bar_select3$full_name <-
-  unlist(strsplit(as.character(bar_select3$full_name), split = '_', fixed = TRUE))[seq(1,2*length(bar_select3$full_name),2)]
-bar_select3$full_name <-
-  factor(bar_select3$full_name, levels = bar_select3$full_name[order(bar_select3$std)])
 
 heatmap.2(
   ann_qselect2,
@@ -180,10 +157,6 @@ bar_select$full_name <-
 bar_select$full_name <-
   factor(bar_select$full_name, levels = bar_select$full_name[order(bar_select$std)])
 bar_select <- bar_select[, -c(1, 2, 4)]
-bar_select$full_name <-
-  unlist(strsplit(as.character(bar_select$full_name), split = '_', fixed = TRUE))[seq(1,2*length(bar_select$full_name),2)]
-bar_select$full_name <-
-  factor(bar_select$full_name, levels = bar_select$full_name[order(bar_select$std)])
 
 p <-
   ggplot(data = bar_select, aes(x = full_name, y = std, fill = "a")) +
@@ -191,75 +164,3 @@ p <-
 
 # Horizontal bar plot
 p + coord_flip() + theme(legend.position = "none")
-
-#Superheat
-superheat(as.matrix(ann_qselect2),
-          
-          # set heatmap color map
-          heat.pal = rev(brewer.pal(11, "RdBu")),
-          heat.na.col = "white",
-          
-          # order rows in increasing order of donations
-          order.rows = order(bar_select$std),
-          
-          # grid line colors
-          grid.vline.col = "black",
-          
-          # right plot: STD
-          yr = bar_select$std,
-          yr.plot.type = "bar",
-          yr.axis.name = "Filter influence",
-          yr.plot.size = 0.5,
-          yr.bar.col = "black",
-          yr.obs.col = "white",
-          
-
-          
-          # left labels
-          left.label.size = 0.5,
-          left.label.text.size = 3,
-          left.label.col = adjustcolor("white", alpha.f = 0.3),
-          
-          # bottom labels
-          bottom.label.size = 0.01,
-          bottom.label.col = "white",
-          bottom.label.text.angle = 90,
-          bottom.label.text.alignment = "right",
-          bottom.label.text.size = 4,
-          legend.vspace = 0.01)
-
-#Superheat
-superheat(as.matrix(ann_qselect3),
-          
-          # set heatmap color map
-          heat.pal = rev(brewer.pal(11, "RdBu")),
-          heat.na.col = "white",
-          
-          # order rows in increasing order of donations
-          order.rows = order(bar_select3$std),
-          
-          # grid line colors
-          grid.vline.col = "black",
-          
-          # right plot: STD
-          yr = bar_select3$std,
-          yr.plot.type = "bar",
-          yr.axis.name = "Filter influence",
-          yr.plot.size = 0.5,
-          yr.bar.col = "black",
-          yr.obs.col = "white",
-          
-          
-          
-          # left labels
-          left.label.size = 0.5,
-          left.label.text.size = 3,
-          left.label.col = adjustcolor("white", alpha.f = 0.3),
-          
-          # bottom labels
-          bottom.label.size = 0.01,
-          bottom.label.col = "white",
-          bottom.label.text.angle = 90,
-          bottom.label.text.alignment = "right",
-          bottom.label.text.size = 4,
-          legend.vspace = 0.01)
