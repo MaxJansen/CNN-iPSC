@@ -11,10 +11,10 @@ library("WGCNA")
 library("pheatmap")
 library("reshape2")
 
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/homer_comparison/")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/neg_homer_comparison//")
 
 recoding <- read.table(file = "WGCNA_recoding.txt", header = TRUE)
-ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = "")
+ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = ",")
 module_eigen <- read.table(file = "module_eigengenes.txt", header = T, sep = "")
 motif_matches <- read.delim(file = "novo_motif_matches.txt", sep = "\t", header = F)
 motif_table <- read.table(file = "novo_motif_table.txt", header = T, sep = "")

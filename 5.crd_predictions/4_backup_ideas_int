@@ -1,0 +1,208 @@
+###   Quick Description   ###
+#After compute_credible to preprocess the tables, this script can be used to
+#Determine the distribution of results
+
+library(dplyr)
+library(fitdistrplus)
+library(logspline)
+library(LambertW)
+library(ggplot2)
+library(reshape2)
+library(qvalue)
+library(ape)
+library(cluster)
+library(ggdendro)
+library(dendextend)
+library(psych)
+
+setwd("~/Oxford/RealScripts/credible_sets/data")
+
+cred_set_results <- read.table("credible_set_sep.txt")
+name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
+name_to_loc <- read.table("HRC_credset.snp_ann.txt")
+
+
+#Calculate the differences for each locus and each stage
+#You take alternating rows and subtract the second from the first.
+#The first row is the
+diff <- cred_set_results[seq(1,nrow(cred_set_results),2), ] - cred_set_results[seq(2,nrow(cred_set_results),2), ]
+
+#Nice boxplot to compare stages
+#First put the stages in chronological order
+diff_order <- diff
+colnames(diff_order) <- c("BLC", "DE","EN","EP","PE","PFG","PGT","iPSC")
+diff_order <- diff_order[,c(8,2,7,6,5,4,3,1)]
+sapply(diff_order, sd, na.rm = TRUE)
+meltDiff <- melt(diff_order)
+
+p <- ggplot(meltDiff, aes(factor(variable), value, fill=variable)) +
+  labs(title="Boxplot of Predicted Stage differences",x="Stage", y = "Predicted Difference")
+p + geom_boxplot() + scale_fill_brewer(palette="RdBu") + theme_minimal()
+
+#Now that you have the graph see if sign different
+#non-parametric so kw test
+kruskal.test(value ~ variable, data = meltDiff)
+#Kruskal-Wallis rank sum test
+#Kruskal-Wallis chi-squared = 293.49, df = 7, p-value
+#< 2.2e-16
+####Significantly different variance!###
+
+
+
+
+#New p-values. Don't normalize the data
+z_score_better = list()
+z_score_better[[i]] <- as.data.frame(scale(diff))
+z_score_better = do.call(cbind, z_score_better)
+colnames(z_score_better) <- colnames(diff)
+p_val_better <- sapply(z_score_better, function(z){pvalue2sided=2*pnorm(-abs(z))})
+qbetter <- qvalue(p = p_val_better[,1])
+hist(qbetter)
+summary(qbetter)
+qvalue_better <- qbetter$qvalues
+
+#Redo for whole
+z_score_final = list()
+z_score_final[[i]] <- as.data.frame(scale(diff_order))
+z_score_final = do.call(cbind, z_score_final)
+colnames(z_score_final) <- colnames(diff_order)
+p_val_final <- sapply(z_score_final, function(z){pvalue2sided=2*pnorm(-abs(z))})
+qfinal <- qvalue(p = p_val_final)
+hist(qfinal)
+
+summary(qfinal)
+#Call:
+#  qvalue(p = p_val_final)
+#
+#pi0:	1
+#
+#Cumulative number of significant calls:#
+#  <1e-04 <0.001 <0.01 <0.025 <0.05  <0.1     <1
+#p-value     8758  13796 25453  34927 46157 64742 878232
+#q-value     3990   5609  8753  10788 12890 15823 878232
+#local FDR   3049   4127  6033   7326  8509 10101  24284
+
+qvalue_final <- qfinal$qvalues
+lfdr <- qfinal$lfdr
+hist(lfdr)
+plot(qfinal)
+
+
+### Merging ###
+
+#To compare diffs to position PPA, merge dataframes
+#(Optional) Tailor name_to_loc
+name_to_loc2 <- name_to_loc[, -3]
+colnames(name_to_loc2) <- c("name_only", "gen_loc")
+
+#Add names and locations to diff
+diff_name <- diff_order
+diff_name$name <- name_var_seq$name_only[seq(1,nrow(name_var_seq),2)]
+diff_name <- diff_name[ , c(9,1,2,3,4,5,6,7,8)]
+loc_diff <- merge(diff_name, name_to_loc2, by.x = "name", by.y = "name_only")
+loc_diff <- loc_diff[, c(10,1:9)]
+
+### End of first merge ###
+
+###Key next step: importing PPAg ###
+
+setwd("per_locus_credsets/")
+
+file_list <- list.files()
+
+for (file in file_list){
+
+  # if the merged dataset doesn't exist, create it
+  if (!exists("dataset")){
+    dataset <- read.table(file, header=TRUE, sep="\t")
+  }
+
+  # if the merged dataset does exist, append to it
+  if (exists("dataset")){
+    temp_dataset <-read.table(file, header=TRUE, sep="\t")
+    dataset<-rbind(dataset, temp_dataset)
+    rm(temp_dataset)
+  }
+
+}
+
+setwd("~/Oxford/RealScripts/credible_sets/data")
+per_locus_credset <- dataset
+per_locus_credset$full_loc <- paste(per_locus_credset$Chr, per_locus_credset$Pos, sep=":")
+
+#Merge PPA with diff
+loc_PPA_diff <- merge(per_locus_credset, loc_diff, by.x = "full_loc", by.y = "gen_loc")
+
+#Select only unique rows so you get 109776 rows like diff_name
+loc_PPA_diff <- loc_PPA_diff[unique(loc_PPA_diff$name),]
+loc_PPA_diff <- loc_PPA_diff[,c(5:14)]
+#Select PPa >0.1
+loc_PPA_select <- loc_PPA_diff[loc_PPA_diff$PPAg > 0.1, ]
+
+#Select rows with names and pred. diff. containing q-value < 0.0001
+fdrselect_diffname <- diff_name[apply(lfdr[, ], MARGIN = 1, function(x) any(x < 0.05)), ]
+
+#Now, from the selected fdr, subset the PPa > 0.1 from loc_PPA_select
+fdrselect_diffname <- subset(fdrselect_diffname, name %in% loc_PPA_select$name)
+
+rownames(fdrselect_diffname) <- fdrselect_diffname$name
+fdrselect_diffname <- fdrselect_diffname[,-1]
+
+#Do hclust
+dist_diff <- dist(fdrselect_diffname, method = "euclidean")
+hc.cols <- hclust(dist(t(fdrselect_diffname)))
+plot(hc.cols, col = "#487AA1", col.main = "Black", , main = "Predicted Difference Dendogram", col.lab = "#7C8071",
+     col.axis = "#F38630", lwd = 1, lty = 3, sub = "", axes = FALSE, xlab = "Stage", ylab = "Euclidian Distance")
+
+ord <- hclust( dist(fdrselect_diffname, method = "euclidean"), method = "ward.D" )$order
+
+### OPTIONAL ###
+#Prepare rownames, convert rsXXX names to known names
+#clear_names <- merge(fdrselect_diffname, name_to_loc, by.x = "Variant", by.y = "V1")
+### \OPTIONAL ###
+
+#Make heatmap w. stage on x and genes on y
+fdrselect_diffname$Variant <- (rownames(fdrselect_diffname))
+fdrselect_diffname.m <- melt(fdrselect_diffname)
+fdrselect_diffname.m$Variant <- factor( fdrselect_diffname.m$Variant, levels = rownames(fdrselect_diffname)[ord])
+fdrselect_diffname.m$variable <- factor( fdrselect_diffname.m$variable, levels = colnames(fdrselect_diffname)[1:8] )
+
+ggplot( fdrselect_diffname.m, aes(variable, Variant) ) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = muted("blue"), high = muted("red"))
+
+
+########################################################################
+###                                                                  ###
+### Save all tables in special directory and go on with second merge:###
+###                        PPa                                       ###
+###                                                                  ###
+########################################################################
+
+
+setwd("~/Oxford/RealScripts/credible_sets/data")
+save.image("~/Oxford/RealScripts/credible_sets/data/ideas_interpretation")
+
+### Make all vs all scatterplots ###
+rownames(diff_name) <- diff_name$name
+diff_name <- diff_name[,-1]
+plot(diff_name)
+
+savehistory()
+
+pairs.panels(diff_name,
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE  # show density plots
+)
+
+########################################################################
+###                                                                  ###
+###   Select Monogenic DM Genes:                                     ###
+###   GCK, HNF1A, HNF1B, HNF4A, KCNJ11, PPARG, WFS1                  ###
+###                                                                  ###
+########################################################################
+
+model for predictions
+/well/mccarthy/users/maxlouis/basset_larger_filters/params_fs11_filt21_best.th
+/well/mccarthy/users/maxlouis/basset_neg/params_fs11_filt21_best.th

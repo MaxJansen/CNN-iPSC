@@ -263,3 +263,9 @@ superheat(as.matrix(ann_qselect3),
           bottom.label.text.alignment = "right",
           bottom.label.text.size = 4,
           legend.vspace = 0.01)
+
+###    Part 3: Write tables    ###
+write.csv(ann_complete, "neg_ann_complete.txt", row.names = TRUE)
+write.csv(ann_qselect, "ann_qselect.txt", row.names = TRUE)
+write.csv(ann_qselect2, "ann_qselect2.txt", row.names = TRUE)
+write.csv(ann_qselect3, "ann_qselect3.txt", row.names = TRUE)
