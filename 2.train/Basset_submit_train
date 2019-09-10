@@ -12,5 +12,5 @@ qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N original_random_train -e ori
 #1CPM chr1chr2
 qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N 1CPM_chr1chr2_train -e 1CPM_chr1chr2_train.err -o 1CPM_chr1chr2_training.out Basset_train.sh
 
-#1CPM original
-qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N one_CPM_random_train -e 1CPM_chr1chr2_train.err -o 1CPM_chr1chr2_training.out Basset_train.sh
+#1CPM random
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N one_CPM_random_train -e 1CPM_random_train.err -o 1CPM_random_train.out Basset_train.sh

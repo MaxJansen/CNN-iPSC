@@ -10,5 +10,10 @@ export LUA_PATH="$BASSETDIR/src/?.lua;$LUA_PATH"
 export PATH=${PATH}:/well/got2d/agata/bin/weblogo/
 export PATH=${PATH}:/apps/well/meme/4.11.2_2/bin
 
+for i in {1..5}; do
+ printf "AUC on: $i\n"
+ basset_test.lua -cudnn original_chr1chr2/original_chr1chr2.iter$i\_best.th /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/original/chr1chr2/original_islets.chr1_2.h5 original_chr1chr2/AUC_per_feature/iter$i
+done
+
 # Run iter1 from the new 8 column negative set format interactively
 nohup basset_test.lua -cudnn original.iter1_best.th /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/1CPM/real_random/1CPM_islets.h5 AUC_per_feature/iter1 &

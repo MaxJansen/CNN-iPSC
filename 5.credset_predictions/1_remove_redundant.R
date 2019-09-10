@@ -4,7 +4,8 @@
 #The former contains names of variants and their fasta seqs in one column
 #It removes redundancy and creates a new table, which can be used for predictions by a neural network
 
-HRC_all_variants <- read.table("HRC.all_variants.fasta")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
+HRC_all_variants <- read.table("HRC.all_variants_new.fasta")
 
 #Split HRC_all_variants into names and sequences
 nuc_seqs <- HRC_all_variants[seq(2,nrow(HRC_all_variants),2), ]

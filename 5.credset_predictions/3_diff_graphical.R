@@ -3,9 +3,9 @@
 #make graphs and basic statistics
 
 library(dplyr)
-setwd("~/Oxford/RealScripts/credible_sets/data")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
 
-cred_set_results <- read.table("credible_set_sep.txt")
+cred_set_results <- read.table("credible_set_redo.txt")
 name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
 name_to_loc <- read.table("HRC_credset.snp_ann.txt")
 

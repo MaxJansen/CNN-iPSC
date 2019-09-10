@@ -139,3 +139,21 @@ seq_hdf5.py -c -r -t 19889 -v 19487 ../1CPM_islets.fa ../n1CPM_islets_act_test.t
 
 ### Preprocessing finished. You can now start training CNN with these four
 ### .h5-files. See next script.
+
+##################  remove negative column random permute on 1CPM ##################
+# Go to R to remove column
+#test <- read.table("1CPM_islets_act.txt")
+#test <- test[,-9]
+#test$Neg <- rep(0, nrow(test))
+#write.table(test, file = "8colneg1CPM_islets_act.txt", row.names = TRUE, col.names = TRUE, quote = FALSE, sep = "\t")
+# go to directory for random
+cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/1CPM/real_random
+
+# Do random permute
+# 104324 training sequences
+# 11053 test sequences
+# 10737 validation sequences
+seq_hdf5.py -c -r -t 19889 -v 19487 ../1CPM_islets.fa ../8colneg1CPM_islets_act.txt 1CPM_islets.h5
+
+### Preprocessing finished. You can now start training CNN with these four
+### .h5-files. See next script.

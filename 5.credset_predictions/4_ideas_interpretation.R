@@ -15,10 +15,11 @@ library(ggdendro)
 library(dendextend)
 library(psych)
 library(gplots)
+library(RColorBrewer)
 
-setwd("~/Oxford/RealScripts/credible_sets/data")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
 
-cred_set_results <- read.table("credible_set_largef.txt")
+cred_set_results <- read.table("credible_set_redo.txt")
 name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
 name_to_loc <- read.table("HRC_credset.snp_ann.txt")
 
@@ -33,8 +34,9 @@ diff <- cred_set_results[seq(2,nrow(cred_set_results),2), ] - cred_set_results[s
 #Nice boxplot to compare stages
 #First put the stages in chronological order
 diff_order <- diff 
-colnames(diff_order) <- c("BLC", "DE","EN","EP","PE","PFG","PGT","iPSC")
-diff_order <- diff_order[,c(8,2,7,6,5,4,3,1)]
+colnames(diff_order) <- c("BLC", "DE","EN","EP","GT","PE","PF","iPSC", "Neg")
+diff_order <- diff_order[,c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC", "Neg")]
+
 #sapply(diff_order, sd, na.rm = TRUE)
 meltDiff <- melt(diff_order)
 
@@ -46,8 +48,7 @@ p + geom_boxplot() + scale_fill_brewer(palette="RdBu") + theme_minimal()
 #non-parametric so kw test
 kruskal.test(value ~ variable, data = meltDiff)
 #Kruskal-Wallis rank sum test
-#Kruskal-Wallis chi-squared = 293.49, df = 7, p-value
-#< 2.2e-16 
+#Kruskal-Wallis chi-squared = 189.36, df = 8, p-value < 2.2e-16
 ####Significantly different variance!###
 
 ### DO NOT NORMALIZE DATA ###
@@ -62,16 +63,18 @@ hist(qfinal)
 
 
 summary(qfinal)
+# Values (note, these numbers are larger than during the internship)
 #Call:
 #  qvalue(p = p_val_final)
 #
 #pi0:	1	
 #
-#Cumulative number of significant calls:#  
+#Cumulative number of significant calls:
+#  
 #  <1e-04 <0.001 <0.01 <0.025 <0.05  <0.1     <1
-#p-value     8758  13796 25453  34927 46157 64742 878232
-#q-value     3990   5609  8753  10788 12890 15823 878232
-#local FDR   3049   4127  6033   7326  8509 10101  24284
+#p-value    12537  17280 26391  32909 40146 50983 988011
+#q-value     7625   9672 12952  14950 16853 19208 988011
+#local FDR   6069   7523  9726  10931 12052 13561  22167
 
 qvalue_final <- qfinal$qvalues
 lfdr <- qfinal$lfdr
@@ -89,14 +92,14 @@ colnames(name_to_loc2) <- c("name_only", "gen_loc")
 #Add names and locations to diff
 diff_name <- diff_order
 diff_name$name <- name_var_seq$name_only[seq(1,nrow(name_var_seq),2)]
-diff_name <- diff_name[ , c(9,1,2,3,4,5,6,7,8)]
+diff_name <- diff_name[ , c(10,1,2,3,4,5,6,7,8,9)]
 loc_diff <- merge(diff_name, name_to_loc2, by.x = "name", by.y = "name_only")
-loc_diff <- loc_diff[, c(10,1:9)]
+loc_diff <- loc_diff[, c(11,1:10)]
 
 ### Warning! optional branch ahead ###
 #To keep whole names, do this:
 full_loc_diff <- merge(diff_name, name_to_loc, by.x = "name", by.y = "V1")
-full_loc_diff <- full_loc_diff[, c(10,11,1:9)]
+full_loc_diff <- full_loc_diff[, c(11,12,1:10)]
 
 ### End of optional branch
 
@@ -124,7 +127,7 @@ for (file in file_list){
   
 }
 
-setwd("~/Oxford/RealScripts/credible_sets/data")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
 per_locus_credset <- dataset
 per_locus_credset$full_loc <- paste(per_locus_credset$Chr, per_locus_credset$Pos, sep=":")
 
@@ -153,18 +156,20 @@ loc_PPA_diff <- loc_PPA_diff[,c(5:14)]
 loc_PPA_select <- loc_PPA_diff[loc_PPA_diff$PPAg >= 0.1, ]
 
 #Select rows with names and pred. diff. containing FDR < 0.05
+qvalue_final <- qvalue_final[,-9]
 fdrselect_diffname <- diff_name[apply(qvalue_final[, ], MARGIN = 1, function(x) any(x <= 0.05)), ]
 qvalue_final_df <- as.data.frame(qvalue_final)
 
 ####
 fdrselect_iPSC <- diff_name[qvalue_final_df$iPSC <= 0.05, ]
 fdrselect_DE <- diff_name[qvalue_final_df$DE <= 0.05, ]
-fdrselect_PGT <- diff_name[qvalue_final_df$PGT <= 0.05, ]
-fdrselect_PFG <- diff_name[qvalue_final_df$PFG <= 0.05, ]
+fdrselect_GT <- diff_name[qvalue_final_df$PGT <= 0.05, ]
+fdrselect_PF <- diff_name[qvalue_final_df$PFG <= 0.05, ]
 fdrselect_PE <- diff_name[qvalue_final_df$PE <= 0.05, ]
 fdrselect_EP <- diff_name[qvalue_final_df$EP <= 0.05, ]
 fdrselect_EN <- diff_name[qvalue_final_df$EN <= 0.05, ]
 fdrselect_BLC <- diff_name[qvalue_final_df$BLC <= 0.05, ]
+fdrselect_Neg <- diff_name[qvalue_final_df$BLC <= 0.05, ]
 ###
 
 #Now, from the selected fdr, subset the PPa > 0.1 from loc_PPA_select. fdrselect_nn contains nicknames and variant names
@@ -176,14 +181,22 @@ rownames(fdrselect_nn) <- fdrselect_nn$total_name
 fdrselect_nn <- within(fdrselect_nn, rm(total_name))
 
 # Significant variants for each stage #
-iPSC_final_select <- subset(fdrselect_iPSC, name %in% loc_PPA_select$name)
-DE_final_select <- subset(fdrselect_DE, name %in% loc_PPA_select$name)
-PGT_final_select <- subset(fdrselect_PGT, name %in% loc_PPA_select$name)
-PFG_final_select <- subset(fdrselect_PFG, name %in% loc_PPA_select$name)
-PE_final_select <- subset(fdrselect_PE, name %in% loc_PPA_select$name)
-EP_final_select <- subset(fdrselect_EP, name %in% loc_PPA_select$name)
-EN_final_select <- subset(fdrselect_EN, name %in% loc_PPA_select$name)
-BLC_final_select <- subset(fdrselect_BLC, name %in% loc_PPA_select$name)
+iPSC_final_select <-
+  subset(fdrselect_iPSC, name %in% loc_PPA_select$name)
+DE_final_select <-
+  subset(fdrselect_DE, name %in% loc_PPA_select$name)
+GT_final_select <-
+  subset(fdrselect_GT, name %in% loc_PPA_select$name)
+PF_final_select <-
+  subset(fdrselect_PF, name %in% loc_PPA_select$name)
+PE_final_select <-
+  subset(fdrselect_PE, name %in% loc_PPA_select$name)
+EP_final_select <-
+  subset(fdrselect_EP, name %in% loc_PPA_select$name)
+EN_final_select <-
+  subset(fdrselect_EN, name %in% loc_PPA_select$name)
+BLC_final_select <-
+  subset(fdrselect_BLC, name %in% loc_PPA_select$name)
 # End of significant variants for each stage #
 
 #Redo heatmap with dendrogram with the following traits:
@@ -191,7 +204,20 @@ BLC_final_select <- subset(fdrselect_BLC, name %in% loc_PPA_select$name)
 #Add q-value asterisks
 #SNP_ID + variant ID as label
 fdr_nn_matrix <- data.matrix(fdrselect_nn)
-heatmap.2(fdr_nn_matrix, col = redblue, dendrogram = "row", Colv = NA, key= T, cexRow = 0.6, margins = c(4,13))
+fdr_nn_matrix <- fdr_nn_matrix[, -9]
+heatmap.2(
+  fdr_nn_matrix,
+  col = bluered,
+  dendrogram = "row",
+  Colv = NA,
+  key = T,
+  cexRow = 0.6,
+  margins = c(4, 13)
+)
+pheatmap::pheatmap(fdr_nn_matrix, color = colorRampPalette(rev(brewer.pal(
+  n = 11, name =
+    "RdBu"
+)))(30), cluster_cols = FALSE)
 
 
 
@@ -203,7 +229,7 @@ prox_selected.m <- melt(prox_selected)
 p<-ggplot(prox_selected.m, aes(x=variable, y=value, group=name, linetype=name)) +
   geom_line(aes(color=name), size =1.2)+
   geom_point(aes(color=name), size =3) +
-  ylim(-0.4,0.4)
+  ylim(-0.6,0.4)
 p <- p + scale_color_brewer(palette="Paired")+
   labs(title="PROX1 variants throughout development",x="Stage", y = "Predicted Difference") +
   theme_minimal(base_size = 22)
