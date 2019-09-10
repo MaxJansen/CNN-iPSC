@@ -7,6 +7,8 @@ cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/neg_training_CNN/original_c
 
 mkdir test_set_predictions
 
+qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N bassetpredict -e bassetpredict.err -o bassetpredict.out Basset_predict.sh
+
 ###Submit the following to gpu:
 ##### load torch modules & dependencies
 module load torch/20170221-p100-gcc5.4.0
@@ -20,10 +22,8 @@ export LUA_PATH="$BASSETDIR/src/?.lua;$LUA_PATH"
 export PATH=${PATH}:/well/got2d/agata/bin/weblogo/
 export PATH=${PATH}:/apps/well/meme/4.11.2_2/bin
 
-for i in {1..5}; do
- printf "Running predictions on: $i\n"
- nohup basset_predict.py --cudnn original.iter$i\_best.th /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/chr1chr2/test_set.chr1.fa test_set_predictions/iter$i.test.txt
-done
+basset_predict.py --cudnn original.iter1_best.th /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/1CPM/real_random/1CPM_islets.h5 test_set_pred2/iter1.test.txt 2>&1 </dev/null
+
 
 ### In R
 act=read.table("/well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/negative_set/data/final_step/original/chr1chr2/chr1_2_last.act.txt")
