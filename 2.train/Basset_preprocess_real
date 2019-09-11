@@ -151,8 +151,8 @@ cd /well/mccarthy/users/maxlouis/oxford2/CNN_project/preprocessing/1CPM/real_ran
 
 # Do random permute
 # 104324 training sequences
-# 11053 test sequences
-# 10737 validation sequences
+# 19889 test sequences
+# 19487 validation sequences
 seq_hdf5.py -c -r -t 19889 -v 19487 ../1CPM_islets.fa ../8colneg1CPM_islets_act.txt 1CPM_islets.h5
 
 ### Preprocessing finished. You can now start training CNN with these four
