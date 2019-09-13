@@ -17,9 +17,9 @@ library(psych)
 library(gplots)
 library(RColorBrewer)
 
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
 
-cred_set_results <- read.table("credible_set_redo.txt")
+cred_set_results <- read.table("credible_set_pred.txt")
 name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
 name_to_loc <- read.table("HRC_credset.snp_ann.txt")
 
@@ -34,8 +34,8 @@ diff <- cred_set_results[seq(2,nrow(cred_set_results),2), ] - cred_set_results[s
 #Nice boxplot to compare stages
 #First put the stages in chronological order
 diff_order <- diff 
-colnames(diff_order) <- c("BLC", "DE","EN","EP","GT","PE","PF","iPSC", "Neg")
-diff_order <- diff_order[,c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC", "Neg")]
+colnames(diff_order) <- c("BLC", "DE","EN","EP","GT","PE","PF","iPSC")
+diff_order <- diff_order[,c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC")]
 
 #sapply(diff_order, sd, na.rm = TRUE)
 meltDiff <- melt(diff_order)
@@ -92,14 +92,14 @@ colnames(name_to_loc2) <- c("name_only", "gen_loc")
 #Add names and locations to diff
 diff_name <- diff_order
 diff_name$name <- name_var_seq$name_only[seq(1,nrow(name_var_seq),2)]
-diff_name <- diff_name[ , c(10,1,2,3,4,5,6,7,8,9)]
+diff_name <- diff_name[ , c(9,1,2,3,4,5,6,7,8)]
 loc_diff <- merge(diff_name, name_to_loc2, by.x = "name", by.y = "name_only")
-loc_diff <- loc_diff[, c(11,1:10)]
+loc_diff <- loc_diff[, c(10,1:9)]
 
 ### Warning! optional branch ahead ###
 #To keep whole names, do this:
 full_loc_diff <- merge(diff_name, name_to_loc, by.x = "name", by.y = "V1")
-full_loc_diff <- full_loc_diff[, c(11,12,1:10)]
+full_loc_diff <- full_loc_diff[, c(10,11,1:9)]
 
 ### End of optional branch
 
@@ -127,7 +127,7 @@ for (file in file_list){
   
 }
 
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/credset_predictions/")
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions//")
 per_locus_credset <- dataset
 per_locus_credset$full_loc <- paste(per_locus_credset$Chr, per_locus_credset$Pos, sep=":")
 
@@ -169,7 +169,6 @@ fdrselect_PE <- diff_name[qvalue_final_df$PE <= 0.05, ]
 fdrselect_EP <- diff_name[qvalue_final_df$EP <= 0.05, ]
 fdrselect_EN <- diff_name[qvalue_final_df$EN <= 0.05, ]
 fdrselect_BLC <- diff_name[qvalue_final_df$BLC <= 0.05, ]
-fdrselect_Neg <- diff_name[qvalue_final_df$BLC <= 0.05, ]
 ###
 
 #Now, from the selected fdr, subset the PPa > 0.1 from loc_PPA_select. fdrselect_nn contains nicknames and variant names
@@ -204,7 +203,6 @@ BLC_final_select <-
 #Add q-value asterisks
 #SNP_ID + variant ID as label
 fdr_nn_matrix <- data.matrix(fdrselect_nn)
-fdr_nn_matrix <- fdr_nn_matrix[, -9]
 heatmap.2(
   fdr_nn_matrix,
   col = bluered,
@@ -215,9 +213,9 @@ heatmap.2(
   margins = c(4, 13)
 )
 pheatmap::pheatmap(fdr_nn_matrix, color = colorRampPalette(rev(brewer.pal(
-  n = 11, name =
+  n = 7, name =
     "RdBu"
-)))(30), cluster_cols = FALSE)
+)))(20), cluster_cols = FALSE)
 
 
 

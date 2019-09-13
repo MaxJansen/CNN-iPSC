@@ -15,22 +15,27 @@ colnames(predictions) <-
   c("BLC", "DE", "EN", "EP", "GT", "PE", "PF", "iPSC")
 
 
-
 score_test <-
   join_scores(
-    predictions$BLC,
+    predictions$iPSC,
     predictions$DE,
+    predictions$GT,
+    predictions$PF,
+    predictions$PE,
+    predictions$EP,
     predictions$EN,
-    predictions$EP
-    label_test <- join_labels(act$BLC, act$DE)
-    mmdat1 <-
-      mmdata(
-        score_test,
-        label_test,
-        modnames = c("BLC", "DE"),
-        dsids = c(1, 2)
-      )
-    
-    mmcurves <- evalmod(mmdat1)
-    autoplot(mmcurves)
+    predictions$BLC,
+  )
+
+label_test <-
+  join_labels(act$iPSC, act$DE, act$GT, act$PF, act$PE, act$EP, act$EN, act$BLC)
+
+mmdat1 <-
+  mmdata(score_test,
+         label_test,
+         modnames = c("iPSC","DE","GT","PF","PE","EP","EN","BLC"),
+         dsids = c(1, 2, 3, 4, 5, 6, 7, 8))
+
+mmcurves <- evalmod(mmdat1)
+autoplot(mmcurves)
     
