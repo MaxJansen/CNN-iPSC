@@ -24,7 +24,7 @@ score_test <-
     predictions$PE,
     predictions$EP,
     predictions$EN,
-    predictions$BLC,
+    predictions$BLC
   )
 
 label_test <-
@@ -37,5 +37,8 @@ mmdat1 <-
          dsids = c(1, 2, 3, 4, 5, 6, 7, 8))
 
 mmcurves <- evalmod(mmdat1)
-autoplot(mmcurves)
+autoplot(mmcurves, curvetype = "ROC")
+autoplot(mmcurves, curvetype = "PRC")
     
+
+

@@ -1,8 +1,9 @@
 ###   Quick Description   ###
-#After compute_credible to preprocess the tables, this script can be used to
-#Determine the distribution of results 
+# After compute_credible to preprocess the tables, this script can be used to
+# Determine the distribution of results 
 
 library(dplyr)
+library(tidyr)
 library(fitdistrplus)
 library(logspline)
 library(LambertW)
@@ -24,18 +25,19 @@ name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
 name_to_loc <- read.table("HRC_credset.snp_ann.txt")
 
 
-#Calculate the differences for each locus and each stage
-#You take alternating rows and subtract the second from the first.
-###   IMPORTNANT EDIT   ### 
-#I switched it, now the first row (ref) is subtracted froom the second row. This way the diff_value increases if chromatin is 
-#opened by a variant.
-diff <- cred_set_results[seq(2,nrow(cred_set_results),2), ] - cred_set_results[seq(1,nrow(cred_set_results),2), ] 
+# Calculate the differences for each variant and each stage by subtracting alternating rows
+# The first row (ref) is subtracted froom the second row. This way the diff_value increases  
+# if the variant increases chromatin openness.
+diff <-
+  cred_set_results[seq(2, nrow(cred_set_results), 2), ] - cred_set_results[seq(1, nrow(cred_set_results), 2), ]
 
-#Nice boxplot to compare stages
-#First put the stages in chronological order
-diff_order <- diff 
-colnames(diff_order) <- c("BLC", "DE","EN","EP","GT","PE","PF","iPSC")
-diff_order <- diff_order[,c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC")]
+# Boxplot to compare stages
+# First put the stages in chronological order
+diff_order <- diff
+colnames(diff_order) <-
+  c("BLC", "DE", "EN", "EP", "GT", "PE", "PF", "iPSC")
+diff_order <-
+  diff_order[, c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC")]
 
 #sapply(diff_order, sd, na.rm = TRUE)
 meltDiff <- melt(diff_order)
@@ -43,6 +45,15 @@ meltDiff <- melt(diff_order)
 p <- ggplot(meltDiff, aes(factor(variable), value, fill=variable)) +
   labs(title="Boxplot of Predicted Stage differences",x="Stage", y = "Predicted Difference")
 p + geom_boxplot() + scale_fill_brewer(palette="RdBu") + theme_minimal()
+
+dp <- ggplot(meltDiff, aes(variable, value, fill = variable)) + 
+  geom_violin(trim=FALSE)+
+  labs(title="Plot of Predicted differences per stage",x="Stage", y = "Predicted difference") +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_text(size = 24),
+        axis.title.y = element_text(size = 24)
+        )
+dp + scale_fill_brewer(palette="RdBu") + theme_minimal(base_size = 14)
 
 #Now that you have the graph see if sign different
 #non-parametric so kw test
@@ -63,7 +74,8 @@ hist(qfinal)
 
 
 summary(qfinal)
-# Values (note, these numbers are larger than during the internship)
+
+# Summary results
 #Call:
 #  qvalue(p = p_val_final)
 #
@@ -72,9 +84,9 @@ summary(qfinal)
 #Cumulative number of significant calls:
 #  
 #  <1e-04 <0.001 <0.01 <0.025 <0.05  <0.1     <1
-#p-value    12537  17280 26391  32909 40146 50983 988011
-#q-value     7625   9672 12952  14950 16853 19208 988011
-#local FDR   6069   7523  9726  10931 12052 13561  22167
+#p-value    11219  15451 24134  30414 37425 47887 878232
+#q-value     6641   8517 11603  13394 15096 17378 878232
+#local FDR   5265   6581  8565   9790 10886 12097  20619
 
 qvalue_final <- qfinal$qvalues
 lfdr <- qfinal$lfdr
@@ -85,7 +97,9 @@ plot(qfinal)
 ### Merging ###
 
 #To compare diffs to position PPA, merge dataframes
-#(Optional) Tailor name_to_loc
+# Remove ">" sign between nucleotides in name_to_loc rsids
+name_to_loc$V1 <- gsub(">", "", name_to_loc$V1)
+#Tailor name_to_loc
 name_to_loc2 <- name_to_loc[, -3]
 colnames(name_to_loc2) <- c("name_only", "gen_loc")
 
@@ -113,11 +127,6 @@ file_list <- list.files()
 
 for (file in file_list){
   
-  # if the merged dataset doesn't exist, create it
-  if (!exists("dataset")){
-    dataset <- read.table(file, header=TRUE, sep="\t")
-  }
-  
   # if the merged dataset does exist, append to it
   if (exists("dataset")){
     temp_dataset <-read.table(file, header=TRUE, sep="\t")
@@ -125,51 +134,119 @@ for (file in file_list){
     rm(temp_dataset)
   }
   
+  # if the merged dataset doesn't exist, create it
+  if (!exists("dataset")){
+    dataset <- read.table(file, header=TRUE, sep="\t")
+  }
+  
+  
+  
 }
 
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions//")
+
+
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
 per_locus_credset <- dataset
 per_locus_credset$full_loc <- paste(per_locus_credset$Chr, per_locus_credset$Pos, sep=":")
 
 #Merge PPA with diff
 loc_PPA_diff <- merge(per_locus_credset, loc_diff, by.x = "full_loc", by.y = "gen_loc")
 
+#### Experiments ####
+# How many unique locations are there out of 126,013 per locus PPA rows? Ans: 109400
+length(unique(per_locus_credset$full_loc))
+# Do all rsid's that have an associated location occur in the PPA loci dataset? Ans: Yes, 109,779.
+dim(subset(name_to_loc, V2 %in% per_locus_credset$full_loc))
+# Do all locations with an associated PPA occur in the rsid to location dataset? Ans: NO, 125,884 of 126,013.
+dim(subset(per_locus_credset, full_loc %in% name_to_loc$V2))
+#### End of Experiments ####
 
-### Resume optional branch ###
+
 
 #Merge PPA with full_diff
 colnames(full_loc_diff)[1:2] <- c("loc","nickname")
 full_PPA_diff <- merge(per_locus_credset, full_loc_diff, by.x = "full_loc", by.y = "loc")
-### TODO!
+
+# Make a similar full_PPA_diff, but only with highest PPA
+unique_rsid_PPA_diff <- full_PPA_diff %>% group_by(name) %>% top_n(1, PPAg )
+#
 #Get unique ones, remove extra cols and Select PPa threshold 
-full_PPA_diff <- full_PPA_diff[unique(full_PPA_diff$name),]
-full_PPA_diff <- subset(full_PPA_diff, select = -c(full_loc, Chr, Pos))
+slim_PPA_diff <- subset(full_PPA_diff, select = -c(full_loc, Chr, Pos))
 full_PPA_select <- full_PPA_diff[full_PPA_diff$PPAg > 0.1, ]
+unique_rsid_PPA_select <- unique_rsid_PPA_diff[unique_rsid_PPA_diff$PPAg >= 0.1, ]
+
 ###End optional branch ###
 
 
 
-#Select only unique rows so you get 109776 rows like diff_name
-loc_PPA_diff <- loc_PPA_diff[unique(loc_PPA_diff$name),]
-loc_PPA_diff <- loc_PPA_diff[,c(5:14)]
+#Trim
+PPA_diff <- loc_PPA_diff[,c(5:14)]
 #Select PPa >0.1
-loc_PPA_select <- loc_PPA_diff[loc_PPA_diff$PPAg >= 0.1, ]
+loc_PPA_select <- PPA_diff[PPA_diff$PPAg >= 0.1, ]
 
 #Select rows with names and pred. diff. containing FDR < 0.05
-qvalue_final <- qvalue_final[,-9]
 fdrselect_diffname <- diff_name[apply(qvalue_final[, ], MARGIN = 1, function(x) any(x <= 0.05)), ]
 qvalue_final_df <- as.data.frame(qvalue_final)
 
-####
+#### Select predicted differences, based on qvalue signigicance ####
 fdrselect_iPSC <- diff_name[qvalue_final_df$iPSC <= 0.05, ]
+fdrselect_iPSC_PPA <- merge(fdrselect_iPSC, full_PPA_diff, by.x = "name", by.y = "name", all.x = TRUE)
 fdrselect_DE <- diff_name[qvalue_final_df$DE <= 0.05, ]
-fdrselect_GT <- diff_name[qvalue_final_df$PGT <= 0.05, ]
-fdrselect_PF <- diff_name[qvalue_final_df$PFG <= 0.05, ]
+fdrselect_GT <- diff_name[qvalue_final_df$GT <= 0.05, ]
+fdrselect_PF <- diff_name[qvalue_final_df$PF <= 0.05, ]
 fdrselect_PE <- diff_name[qvalue_final_df$PE <= 0.05, ]
 fdrselect_EP <- diff_name[qvalue_final_df$EP <= 0.05, ]
 fdrselect_EN <- diff_name[qvalue_final_df$EN <= 0.05, ]
 fdrselect_BLC <- diff_name[qvalue_final_df$BLC <= 0.05, ]
-###
+
+###################################################################
+
+#### Count how many of the significant predicted differences are shared across stages ####
+
+# Prepare empty df with cols for siginifcant difference occurrence
+stacked_df <- data.frame(matrix(ncol=2, nrow =0))
+colnames(stacked_df) <- c("Single stage", "Shared")
+
+# Loop through the stages in the qvalue dataframe and count how many significant
+# differences are unique to each stage
+for (i in colnames(qvalue_final_df)) {
+  qvalselect <- qvalue_final_df[qvalue_final_df[[i]] <= 0.05, ]
+  num <- apply(qvalselect <= 0.05, 1,  sum, na.rm= TRUE)
+  single_counts <- sum(num == 1)
+  total <- length(num)
+  multiple_counts <- total - single_counts
+  # Append unique and shared to the df
+  stacked_df[i,] <- cbind(single_counts, multiple_counts)
+}
+
+# Alter the df format to prepare for plotting
+stacked_df$stage <- row.names(stacked_df)
+stacked_test <- melt(stacked_df, key = "occurrence", value = "number")
+stacked_test$stage <- factor(stacked_test$stage)
+stacked_test$stage <- ordered(stacked_test$stage, levels = c("iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC"))
+
+# Plot the results in a stacked barplot
+ggplot(stacked_test, aes(fill=variable, y=value, x=stage)) + 
+  geom_bar(position="stack", stat="identity") +
+  ggtitle("Occurrence of significant predicted differences") +
+  scale_color_brewer(palette="Dark2") +
+  theme_minimal() +
+  xlab("stage") +
+  ylab("Number of significant predicted differences")
+
+#############################################################################
+
+#### How many loci have at least one significant predicted difference? ####
+
+# How many loci are there? Ans: 380
+length(unique(per_locus_credset$IndexSNP))
+# How many rsid's have at least one significant predicted difference? Ans: 7468
+nrow(fdrselect_diffname )
+# How many rows of the full_PPA_diff remain if you select these rsid's? Ans: 8638
+full_sign <- subset(full_PPA_diff, name %in% fdrselect_diffname$name)
+# How many of the 380 Index SNPS harbour at least on significant predicted diff variant? Ans: 301
+length(unique(full_sign$IndexSNP))
+
 
 #Now, from the selected fdr, subset the PPa > 0.1 from loc_PPA_select. fdrselect_nn contains nicknames and variant names
 fdrselect_diffname <- subset(fdrselect_diffname, name %in% loc_PPA_select$name)
@@ -202,7 +279,9 @@ BLC_final_select <-
 #Use fdrselect_diffname, because PPA > 0.1 and q-value < 0.05 gives 44 variants
 #Add q-value asterisks
 #SNP_ID + variant ID as label
+
 fdr_nn_matrix <- data.matrix(fdrselect_nn)
+fdr_nn_matrix <- 
 heatmap.2(
   fdr_nn_matrix,
   col = bluered,
@@ -217,6 +296,8 @@ pheatmap::pheatmap(fdr_nn_matrix, color = colorRampPalette(rev(brewer.pal(
     "RdBu"
 )))(20), cluster_cols = FALSE)
 
+# Write some tables:
+write.table(loc_PPA_diff, file = "loc_PPA_diff.txt", quote = FALSE, sep = "\t")
 
 
 #Select PROX1 variants of interest and other one and plot:
