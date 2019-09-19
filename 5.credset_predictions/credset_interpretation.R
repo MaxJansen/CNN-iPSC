@@ -187,6 +187,9 @@ loc_PPA_select <- PPA_diff[PPA_diff$PPAg >= 0.1, ]
 #Select rows with names and pred. diff. containing FDR < 0.05
 fdrselect_diffname <- diff_name[apply(qvalue_final[, ], MARGIN = 1, function(x) any(x <= 0.05)), ]
 qvalue_final_df <- as.data.frame(qvalue_final)
+qvalue_name <- qvalue_final_df
+qvalue_name$rsid <- diff_name$name
+qvalue_name <- qvalue_name[ , c(9,1,2,3,4,5,6,7,8)]
 
 #### Select predicted differences, based on qvalue signigicance ####
 fdrselect_iPSC <- diff_name[qvalue_final_df$iPSC <= 0.05, ]
@@ -298,7 +301,8 @@ pheatmap::pheatmap(fdr_nn_matrix, color = colorRampPalette(rev(brewer.pal(
 
 # Write some tables:
 write.table(loc_PPA_diff, file = "loc_PPA_diff.txt", quote = FALSE, sep = "\t")
-
+write.table(full_PPA_diff, file = "full_PPA_diff.txt", quote = FALSE, sep = "\t")
+write.table(qvalue_name, file = "qvalue_name.txt", quote = FALSE, sep = "\t")
 
 #Select PROX1 variants of interest and other one and plot:
 prox_selected <- full_PPA_diff[full_PPA_diff$nickname == "PROX1_rs79687284_Known_2", ]

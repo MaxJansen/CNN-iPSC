@@ -1,0 +1,31 @@
+library(dplyr)
+library(tidyr)
+library(fitdistrplus)
+library(logspline)
+library(LambertW)
+library(ggplot2)
+library(reshape2)
+library(qvalue)
+library(ape)
+library(cluster) 
+library(ggdendro)
+library(dendextend)
+library(psych)
+library(gplots)
+library(RColorBrewer)
+library(data.table)
+library(nnet) ## which.is.max function
+library(gage)
+library("DescTools")
+
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
+
+cred_set_results <- read.table("credible_set_pred.txt")
+name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
+name_to_loc <- read.table("HRC_credset.snp_ann.txt")
+qvalue_name <- read.table("qvalue_name.txt", sep = "\t")
+full_PPA_diff <- read.table("full_PPA_diff.txt")
+
+### How often is the top variant by PPA significant with CNNs?
+unique_rsid_PPA_diff <- full_PPA_diff %>% group_by(name) %>% top_n(1, PPAg )
+highest_PPA_in_locus <- full_PPA_diff %>% group_by(IndexSNP) %>% top_n(1, PPAg)
