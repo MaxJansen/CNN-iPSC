@@ -17,6 +17,9 @@ library(dendextend)
 library(psych)
 library(gplots)
 library(RColorBrewer)
+library(grid)
+library(pheatmap)
+
 
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
 
@@ -178,13 +181,10 @@ unique_rsid_PPA_select <- unique_rsid_PPA_diff[unique_rsid_PPA_diff$PPAg >= 0.1,
 ###End optional branch ###
 
 
-
-#Trim
-PPA_diff <- loc_PPA_diff[,c(5:14)]
 #Select PPa >0.1
-loc_PPA_select <- PPA_diff[PPA_diff$PPAg >= 0.1, ]
+loc_PPA_select <- loc_PPA_diff[loc_PPA_diff$PPAg >= 0.1, ]
 
-#Select rows with names and pred. diff. containing FDR < 0.05
+#Select rows with names and pred. diff. containing qvalue < 0.05
 fdrselect_diffname <- diff_name[apply(qvalue_final[, ], MARGIN = 1, function(x) any(x <= 0.05)), ]
 qvalue_final_df <- as.data.frame(qvalue_final)
 qvalue_name <- qvalue_final_df
@@ -252,12 +252,20 @@ length(unique(full_sign$IndexSNP))
 
 
 #Now, from the selected fdr, subset the PPa > 0.1 from loc_PPA_select. fdrselect_nn contains nicknames and variant names
-fdrselect_diffname <- subset(fdrselect_diffname, name %in% loc_PPA_select$name)
-fdrselect_nn <- subset(full_loc_diff, name %in% fdrselect_diffname$name)
+fdrselect_PPA_diffname <- subset(fdrselect_diffname, name %in% loc_PPA_select$name)
+fdrselect_nn <- subset(full_loc_diff, name %in% fdrselect_PPA_diffname$name)
+# To get pheatmap stars, look up in qvalue
+qvalselect_nn <- subset(qvalue_name, rsid  %in% fdrselect_nn$name)
+rownames(qvalselect_nn) <- qvalselect_nn$rsid
+qvalselect_nn <- within(qvalselect_nn, rm(rsid))
+
 fdrselect_nn$total_name <- paste(fdrselect_nn$name, fdrselect_nn$nickname, sep = "  ")
 fdrselect_nn <- fdrselect_nn[, -c(1:3)]
 rownames(fdrselect_nn) <- fdrselect_nn$total_name
 fdrselect_nn <- within(fdrselect_nn, rm(total_name))
+
+# To get pheatmap stars, look up in qvalue
+
 
 # Significant variants for each stage #
 iPSC_final_select <-
@@ -284,6 +292,7 @@ BLC_final_select <-
 #SNP_ID + variant ID as label
 
 fdr_nn_matrix <- data.matrix(fdrselect_nn)
+
 fdr_nn_matrix <- 
 heatmap.2(
   fdr_nn_matrix,
@@ -294,10 +303,47 @@ heatmap.2(
   cexRow = 0.6,
   margins = c(4, 13)
 )
-pheatmap::pheatmap(fdr_nn_matrix, color = colorRampPalette(rev(brewer.pal(
-  n = 7, name =
+pheatmap::pheatmap(fdrselect_nn, color = colorRampPalette(rev(brewer.pal(
+  n = 8, name =
     "RdBu"
 )))(20), cluster_cols = FALSE)
+
+
+# Thresholds for predictions
+min = -0.2
+max = 0.2
+thresh_nn <- fdrselect_nn
+thresh_nn[,][thresh_nn[,] < min] <- min
+thresh_nn[,][thresh_nn[,] > max] <- max
+
+my_pheatmap <- pheatmap::pheatmap(thresh_nn, color = colorRampPalette(rev(brewer.pal(
+  n = 10, name =
+    "RdBu"
+)))(16), cluster_cols = FALSE)
+
+#get the order of this new pheatmap to get the qvalue order right
+pheatname_order <- my_pheatmap$tree_row$labels[my_pheatmap$tree_row$order]
+pheatrsid_order <- sapply(strsplit(pheatname_order, "  "), `[[`, 1)
+thresh_nn_order <- row.names(thresh_nn)
+thresh_nn_order <- sapply(strsplit(thresh_nn_order, "  "), `[[`, 1)
+
+qvalselect_nn <- qvalselect_nn[c(thresh_nn_order),]
+
+#After creating an empty matrix for the stars, fill in with stars based on qvalue
+qval_sign_matrix <- matrix(data = " ", nrow = dim(qvalselect_nn)[1], ncol = dim(qvalselect_nn)[2])
+for (i in 1:nrow(qvalselect_nn)){
+  for (j in 1:ncol(qvalselect_nn)){
+    qval_sign_matrix[i,j][(qvalselect_nn[i,j] <= 0.05 )] <- "*"
+    
+  }
+}
+qval_sign_matrix
+
+pheatmap::pheatmap(thresh_nn, color = colorRampPalette(rev(brewer.pal(
+  n = 10, name =
+    "RdBu"
+)))(16), cluster_cols = FALSE, display_numbers = qval_sign_matrix)
+
 
 # Write some tables:
 write.table(loc_PPA_diff, file = "loc_PPA_diff.txt", quote = FALSE, sep = "\t")
