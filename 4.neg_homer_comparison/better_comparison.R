@@ -64,11 +64,11 @@ table_target$Query.ID <- NULL
 # cor_matrix = matrix()
 # result_all <- WGCNA::cor(t(module_agg), t(table_target), method = "pearson")
 # result_all %>% select_if(~sum(!is.na(.)) > 0)
-
-pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
-
-
-#Redo, with filter names only (so remove TF names), this means you need a smaller table first:
+#
+# pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
+#
+#
+# Redo, with filter names only (so remove TF names), this means you need a smaller table first:
 ann_slimmed <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
 ann_qselect$row <- ann_slimmed
 ann_slimdf <- ann_qselect[!duplicated(ann_slimmed),]
