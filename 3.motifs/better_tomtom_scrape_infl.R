@@ -67,6 +67,15 @@ tomtom_infl_name <-
     all.x = TRUE
   )
 
+
+
+#This gives you a table of filter influence per stage for all CNN filters
+table_target <- table_target[,-2]
+table_target <- tidyr::spread(table_target, V3, V4)
+colnames(table_target)[1] <- "Query.ID"
+table_target$Query.ID <- paste0("filter", table_target$Query.ID)
+table_target <- table_target[c("Query.ID", "iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC")]
+
 ######################################################################
 ### Comment 20 september: merge filter influence with table_target ###
 
@@ -79,15 +88,10 @@ ann_unannotated <-
     all.x = TRUE
   )
 
-ann_unannotated <- ann_unannotated[ann_unannotated$std >0.1,]
+#For ann_unannotated, only select filters that have any "reasonable" influence: std > 0.001
+ann_unannotated <- ann_unannotated[ann_unannotated$std >0.001,]
+ann_unannotated_select <- ann_unannotated[ann_unannotated$std >0.1,]
 ######################################################################
-
-#This gives you a table of filter influence per stage for all CNN filters
-table_target <- table_target[,-2]
-table_target <- tidyr::spread(table_target, V3, V4)
-colnames(table_target)[1] <- "Query.ID"
-table_target$Query.ID <- paste0("filter", table_target$Query.ID)
-table_target <- table_target[c("Query.ID", "iPSC", "DE", "GT", "PF", "PE", "EP", "EN", "BLC")]
 
 ###    End of Part 1    ###
 

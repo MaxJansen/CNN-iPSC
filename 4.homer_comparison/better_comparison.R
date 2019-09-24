@@ -8,17 +8,20 @@ library("plyr")
 library("tidyr")
 library("ggplot2")
 library("WGCNA")
-library("GO")
+library("GO.db")
 library("pheatmap")
 library("reshape2")
 
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison/")
+# Get tables from motif directory
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_motifs/")
+ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = ",", row.names = 1)
+ann_qselect2 <- read.csv(file = "ann_qselect2.txt", header = T, sep = ",", row.names = 1)
+ann_qselect3 <- read.csv(file = "ann_qselect3.txt", header = T, sep = ",", row.names = 1)
+ann_allun <- read.csv(file = "all_unannotated.txt", header = T, sep = ",", row.names = 1)
 
+# Get the HOMER specific data from comparison directory and work there:
+setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison/")
 recoding <- read.table(file = "WGCNA_recoding.txt", header = TRUE)
-ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = ",")
-ann_qselect2 <- read.csv(file = "ann_qselect2.txt", header = T, sep = ",")
-ann_qselect3 <- read.csv(file = "ann_qselect3.txt", header = T, sep = ",")
-ann_allun <- read.csv(file = "all_unannotated.txt", header = T, sep = ",")
 module_eigen <- read.table(file = "module_eigengenes.txt", header = T, sep = "")
 motif_matches <- read.delim(file = "novo_motif_matches.txt", sep = "\t", header = F)
 motif_table <- read.table(file = "novo_motif_table.txt", header = T, sep = "")
@@ -39,35 +42,6 @@ agg_mean$Group.1 <- NULL
 module_agg <- as.data.frame(t(agg_mean))
 module_agg<- module_agg[,c(6,2,5,8,7,4,3,1)]
 
-# Calculate the correlations and plot
-cor_matrix = matrix()
-result <- WGCNA::cor(t(module_agg), t(ann_qselect), method = "pearson")
-pheatmap(result, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
-
-# Calculate correlations with all filters
-#Import the influence per stage
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/motif_original_random")
-table_target <- read.table("table_target.txt", header = FALSE)
-setwd("~/Oxford 2.0/Scripts/CNN_project/Data/homer_comparison/")
-table_target <- table_target[,-2]
-table_target <- tidyr::spread(table_target, V3, V4)
-colnames(table_target)[1] <- "Query.ID"
-table_target$Query.ID <- paste0("filter",table_target$Query.ID)
-table_target <- table_target[, c(1,6,3,9,8,7,5,4,2)]
-rownames(table_target) <- table_target$Query.ID
-table_target$Query.ID <- NULL
-
-###############################################################################
-### Save this for later, at the moment we're not interested in comparing    ###
-### all HOMER modules, just the selected ones.                              ###
-###############################################################################
-# cor_matrix = matrix()
-# result_all <- WGCNA::cor(t(module_agg), t(table_target), method = "pearson")
-# result_all %>% select_if(~sum(!is.na(.)) > 0)
-#
-# pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
-#
-#
 # Redo, with filter names only (so remove TF names), this means you need a smaller table first:
 ann_slimmed <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
 ann_qselect$row <- ann_slimmed
@@ -76,22 +50,50 @@ row.names(ann_slimdf) <- sapply(strsplit(row.names(ann_slimdf), ' '), function(x
 ann_slimdf$row <- NULL
 ann_qselect$row <- NULL
 
-#Now, calculate the correlations and plot:
-cor_matrix_slim = matrix()
-result_slim <- WGCNA::cor(t(module_agg), t(ann_slimdf), method = "pearson")
-pheatmap(result_slim, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
+
 
 #Redo, remove irrelevant modules
 module_agg_select <- module_agg[c("black","green","red","turquoise"),]
+
+
+write.csv(module_agg_select, "module_agg_select.txt", row.names = TRUE)
+
+
 cor_matrix_select = matrix()
-result_select <- WGCNA::cor(t(module_agg_select), t(ann_slimdf), method = "pearson")
-all_select <- WGCNA::cor(t(module_agg_select), t(table_target), method = "pearson")
+all_select <- WGCNA::cor(t(module_agg_select), t(ann_allun), method = "spearman")
 
-pheatmap(result_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
-pheatmap(all_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
+pheatmap(all_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = TRUE, cluster_rows = TRUE, show_colnames =  FALSE)
 
+###################################################################
+
+### Some stats:
+# A list of all significant TF binding motifs (q < 0.05):
+test <- sapply(strsplit(ann_qselect$motifname, '_'), `[[`, 1)
+# How many are unique after clipping after '_'? 
+length(unique(test))
+
+all_select["red", all_select["red",] > 0.8]
+# For each row in the resulting matrix (all_select), how many are correlated above 0.8?
+#Select these
+count_df <- data.frame("module", "correlated>0.8")
+
+count_df <- count_df[FALSE, ]
+for (i in row.names(all_select)){
+  y <- all_select[i, all_select[i,] > 0.8]
+  len_list <- length(y)
+  y <- list(y)
+  y <- unlist(y)
+  z <- names(unlist(y))
+  assign(paste("matchlist", i, sep = ""), y)
+  assign(paste("names", i, sep = ""), z)
+  new_row <- cbind(i,len_list)
+  print(new_row)
+  count_df <- rbind(count_df, new_row)
+}
+colnames(count_df) <- c("module", "correlated>0.8")
 ### To make lineplots of overlap, you need identical stage names, for the CNNs, convert stage ###
 
+write 
 ### names to 2-letter names ###
 colnames(ann_qselect)[3] <- "GT"
 colnames(ann_qselect)[4] <- "PF"
@@ -181,3 +183,35 @@ for (m in rownames(loverlap_mat)) {
 lann_homer_overlap <- t(apply(loverlap_mat, 1, "/", lagg_mod_count$x))
 pheatmap(lann_homer_overlap, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
 
+
+# Write tables to perform correlations in R3.5
+
+# Calculate the correlations and plot
+#cor_matrix = matrix()
+#result <- WGCNA::cor(t(module_agg), t(ann_qselect), method = "pearson")
+#pheatmap(result, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
+
+# Calculate correlations with all filters
+# Import the influence per stage
+#setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_motifs/")
+#table_target <- read.table("table_target.txt", header = FALSE)
+#setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison//")
+#table_target <- table_target[,-2]
+#table_target <- tidyr::spread(table_target, V3, V4)
+#colnames(table_target)[1] <- "Query.ID"
+#table_target$Query.ID <- paste0("filter",table_target$Query.ID)
+#table_target <- table_target[, c(1,6,3,9,8,7,5,4,2)]
+#rownames(table_target) <- table_target$Query.ID
+#table_target$Query.ID <- NULL
+
+###############################################################################
+### Save this for later, at the moment we're not interested in comparing    ###
+### all HOMER modules, just the selected ones.                              ###
+###############################################################################
+# cor_matrix = matrix()
+# result_all <- WGCNA::cor(t(module_agg), t(table_target), method = "pearson")
+# result_all %>% select_if(~sum(!is.na(.)) > 0)
+#
+# pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
+#
+#
