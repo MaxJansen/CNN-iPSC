@@ -67,6 +67,7 @@ tomtom_infl_name <-
     all.x = TRUE
   )
 
+filter_q_and_motifs <- tomtom_infl_name[, c(2, 3, 6)]
 
 
 #This gives you a table of filter influence per stage for all CNN filters
@@ -342,3 +343,4 @@ write.csv(ann_complete, "neg_ann_complete.txt", row.names = TRUE)
 write.csv(ann_qselect, "ann_qselect.txt", row.names = TRUE)
 write.csv(ann_qselect2, "ann_qselect2.txt", row.names = TRUE)
 write.csv(ann_qselect3, "ann_qselect3.txt", row.names = TRUE)
+write.csv(filter_q_and_motifs, "filter_q_and_motifs.txt", row.names = TRUE)

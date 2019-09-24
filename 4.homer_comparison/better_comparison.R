@@ -18,6 +18,7 @@ ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = ",", row.name
 ann_qselect2 <- read.csv(file = "ann_qselect2.txt", header = T, sep = ",", row.names = 1)
 ann_qselect3 <- read.csv(file = "ann_qselect3.txt", header = T, sep = ",", row.names = 1)
 ann_allun <- read.csv(file = "all_unannotated.txt", header = T, sep = ",", row.names = 1)
+filter_q_and_motifs <- read.csv(file = "filter_q_and_motifs.txt", header = T, sep = ',', row.names = 1)
 
 # Get the HOMER specific data from comparison directory and work there:
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison/")
@@ -26,12 +27,20 @@ module_eigen <- read.table(file = "module_eigengenes.txt", header = T, sep = "")
 motif_matches <- read.delim(file = "novo_motif_matches.txt", sep = "\t", header = F)
 motif_table <- read.table(file = "novo_motif_table.txt", header = T, sep = "")
 
-#Fix the motif_matches table, because the colnames are inappropriate. You need this for merging later
+# Adapt filter_q_and_motifs column for easier matching
+filter_q_and_motifs$Query.ID <-
+  gsub("ilter", "", x = filter_q_and_motifs$Query.ID)
+
+# Correct ann_allun rownames: remove space
+row.names(ann_allun) <- gsub(" ", "", row.names(ann_allun))
+
+# Fix the motif_matches table, because the colnames are inappropriate. You need this for merging later
 motif_matches$V4 <- NULL
 colnames(motif_matches)[4:13] <- sapply(motif_matches[1,3:12], as.character)
 colnames(motif_matches)[1:2] <- sapply(motif_matches[1,1:2], as.character)
 motif_matches$V3 <- NULL
 colnames(motif_matches)[3] <- "database_rank"
+
 
 #Take averages of the values per stage from Marta's module eigenvalues
 module_eigen$stage <- sapply(strsplit(row.names(module_eigen), '-'), function(x) x[1])
@@ -85,15 +94,67 @@ for (i in row.names(all_select)){
   y <- unlist(y)
   z <- names(unlist(y))
   assign(paste("matchlist", i, sep = ""), y)
-  assign(paste("names", i, sep = ""), z)
+  assign(paste("naam", i, sep = ""), z)
   new_row <- cbind(i,len_list)
   print(new_row)
   count_df <- rbind(count_df, new_row)
 }
 colnames(count_df) <- c("module", "correlated>0.8")
+
 ### To make lineplots of overlap, you need identical stage names, for the CNNs, convert stage ###
 
-write 
+### Do overlap comparison, you need:
+# 1) list of complete TFs per HOMER module
+
+# 2) list of filters correlated above 0.8 with a HOMER module
+
+# 3) list of TFs associated with a given filter
+
+# DO: use [2] to perform the 'any' function iteratively and see if any of the TFs associated with a filter match with 
+#Prepare an empty df you can fill with annotated, correlated filters 
+correlated_filters <- data.frame()
+
+# Once you have list of correlated filters, find how many filters are
+# Annotated by Tomtom 
+module_cor_filtname <- ls()[grep("naam", ls())]
+for (i in module_cor_filtname) {
+  filt_list <- get(i)[get(i) %in% filter_q_and_motifs$Query.ID]
+  i2 <- gsub("naam", "", i)
+  assign(paste("ann_filt_list", i2, sep = "_"), filt_list)
+  
+  # Use the annotated filters to make a table of 
+  # correlated AND annotated filters, their associated motifs, q-value and the module
+  for (j in filt_list) {
+    
+    corann_filt_data <- filter_q_and_motifs[filter_q_and_motifs[,1]==j,]
+    corann_filt_data$cor_module <- i2
+    correlated_filters <- rbind(correlated_filters, corann_filt_data)
+    
+  }
+}
+
+write.table(correlated_filters, "correlated_ann_filters.txt", header = T)
+
+# Determine overlap:
+black_select <- correlated_filters[correlated_filters$cor_module == "black",]
+black_f_in_m <- black_select[black_select$motifname %in% motif_matches[motif_matches$module == "black","ID"],]
+
+green_select <- correlated_filters[correlated_filters$cor_module == "green",]
+green_f_in_m <- green_select[green_select$motifname %in% motif_matches[motif_matches$module == "green","ID"],]
+unique(green_f_in_m$Query.ID)
+
+red_select <- correlated_filters[correlated_filters$cor_module == "red",]
+red_f_in_m <- red_select[red_select$motifname %in% motif_matches[motif_matches$module == "red","ID"],]
+
+
+turquoise_select <-
+  correlated_filters[correlated_filters$cor_module == "turquoise", ]
+turquoise_f_in_m <-
+  turquoise_select[turquoise_select$motifname %in% motif_matches[motif_matches$module == "turquoise", "ID"], ]
+unique(turquoise_f_in_m$Query.ID)
+
+# the listin table target. 
+
 ### names to 2-letter names ###
 colnames(ann_qselect)[3] <- "GT"
 colnames(ann_qselect)[4] <- "PF"
