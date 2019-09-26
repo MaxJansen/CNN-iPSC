@@ -1,7 +1,7 @@
 ### General description ###
-### Compare homer stage influence results to
-### CNN (only annotated with q value < 0.05) filter stage influence
-### Also, only filters with a general influence (std) > 0.1
+### Compare WGCNA module stage influence results to
+### CNN filter stage influence and find overlapping TF motifs
+### associated with both. 
 ### End of description ###
 
 library("plyr")
@@ -167,7 +167,7 @@ for (i in module_cor_filtname) {
   filt_list <- get(i)[get(i) %in% filter_q_and_motifs$Query.ID]
   i2 <- gsub("naam", "", i)
   assign(paste("ann_filt_list", i2, sep = "_"), filt_list)
-  
+
   # Use the annotated filters to make a table of
   # correlated AND annotated filters, their associated motifs, q-value and the module
   for (j in filt_list) {
@@ -175,7 +175,7 @@ for (i in module_cor_filtname) {
     corann_filt_data$cor_module <- i2
     correlated_filters <-
       rbind(correlated_filters, corann_filt_data)
-    
+
   }
 }
 
