@@ -1,6 +1,6 @@
 ### General description ###
 ### Compare homer stage influence results to
-### CNN (only annotated with q value < 0.05) filter stage influence 
+### CNN (only annotated with q value < 0.05) filter stage influence
 ### Also, only filters with a general influence (std) > 0.1
 ### End of description ###
 
@@ -14,18 +14,51 @@ library("reshape2")
 
 # Get tables from motif directory
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_motifs/")
-ann_qselect <- read.csv(file ="ann_qselect.txt", header = T, sep = ",", row.names = 1)
-ann_qselect2 <- read.csv(file = "ann_qselect2.txt", header = T, sep = ",", row.names = 1)
-ann_qselect3 <- read.csv(file = "ann_qselect3.txt", header = T, sep = ",", row.names = 1)
-ann_allun <- read.csv(file = "all_unannotated.txt", header = T, sep = ",", row.names = 1)
-filter_q_and_motifs <- read.csv(file = "filter_q_and_motifs.txt", header = T, sep = ',', row.names = 1)
+ann_qselect <-
+  read.csv(
+    file = "ann_qselect.txt",
+    header = T,
+    sep = ",",
+    row.names = 1
+  )
+ann_qselect2 <-
+  read.csv(
+    file = "ann_qselect2.txt",
+    header = T,
+    sep = ",",
+    row.names = 1
+  )
+ann_qselect3 <-
+  read.csv(
+    file = "ann_qselect3.txt",
+    header = T,
+    sep = ",",
+    row.names = 1
+  )
+ann_allun <-
+  read.csv(
+    file = "all_unannotated.txt",
+    header = T,
+    sep = ",",
+    row.names = 1
+  )
+filter_q_and_motifs <-
+  read.csv(
+    file = "filter_q_and_motifs.txt",
+    header = T,
+    sep = ',',
+    row.names = 1
+  )
 
-# Get the HOMER specific data from comparison directory and work there:
+# Get the HOMER specific data from "comparison" directory and work there:
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison/")
 recoding <- read.table(file = "WGCNA_recoding.txt", header = TRUE)
-module_eigen <- read.table(file = "module_eigengenes.txt", header = T, sep = "")
-motif_matches <- read.delim(file = "novo_motif_matches.txt", sep = "\t", header = F)
-motif_table <- read.table(file = "novo_motif_table.txt", header = T, sep = "")
+module_eigen <-
+  read.table(file = "module_eigengenes.txt", header = T, sep = "")
+motif_matches <-
+  read.delim(file = "novo_motif_matches.txt", sep = "\t", header = F)
+motif_table <-
+  read.table(file = "novo_motif_table.txt", header = T, sep = "")
 
 # Adapt filter_q_and_motifs column for easier matching
 filter_q_and_motifs$Query.ID <-
@@ -36,243 +69,210 @@ row.names(ann_allun) <- gsub(" ", "", row.names(ann_allun))
 
 # Fix the motif_matches table, because the colnames are inappropriate. You need this for merging later
 motif_matches$V4 <- NULL
-colnames(motif_matches)[4:13] <- sapply(motif_matches[1,3:12], as.character)
-colnames(motif_matches)[1:2] <- sapply(motif_matches[1,1:2], as.character)
+colnames(motif_matches)[4:13] <-
+  sapply(motif_matches[1, 3:12], as.character)
+colnames(motif_matches)[1:2] <-
+  sapply(motif_matches[1, 1:2], as.character)
 motif_matches$V3 <- NULL
 colnames(motif_matches)[3] <- "database_rank"
 
 
 #Take averages of the values per stage from Marta's module eigenvalues
-module_eigen$stage <- sapply(strsplit(row.names(module_eigen), '-'), function(x) x[1])
+module_eigen$stage <-
+  sapply(strsplit(row.names(module_eigen), '-'), function(x)
+    x[1])
 module_eigen$stage <- as.factor(module_eigen$stage)
-agg_mean <- aggregate(module_eigen[,1:13],by=list(module_eigen$stage),FUN=mean)
-row.names(agg_mean) <- agg_mean[,1]
+agg_mean <-
+  aggregate(module_eigen[, 1:13],
+            by = list(module_eigen$stage),
+            FUN = mean)
+row.names(agg_mean) <- agg_mean[, 1]
 agg_mean$Group.1 <- NULL
 module_agg <- as.data.frame(t(agg_mean))
-module_agg<- module_agg[,c(6,2,5,8,7,4,3,1)]
+module_agg <- module_agg[, c(6, 2, 5, 8, 7, 4, 3, 1)]
 
 # Redo, with filter names only (so remove TF names), this means you need a smaller table first:
-ann_slimmed <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
+ann_slimmed <-
+  sapply(strsplit(row.names(ann_qselect), ' '), function(x)
+    x[1])
 ann_qselect$row <- ann_slimmed
-ann_slimdf <- ann_qselect[!duplicated(ann_slimmed),]
-row.names(ann_slimdf) <- sapply(strsplit(row.names(ann_slimdf), ' '), function(x) x[1])
+ann_slimdf <- ann_qselect[!duplicated(ann_slimmed), ]
+row.names(ann_slimdf) <-
+  sapply(strsplit(row.names(ann_slimdf), ' '), function(x)
+    x[1])
 ann_slimdf$row <- NULL
 ann_qselect$row <- NULL
 
 
 
-#Redo, remove irrelevant modules
-module_agg_select <- module_agg[c("black","green","red","turquoise"),]
-
-
+#Redo, remove irrelevant modules and save
+module_agg_select <-
+  module_agg[c("black", "green", "red", "turquoise"), ]
 write.csv(module_agg_select, "module_agg_select.txt", row.names = TRUE)
 
-
+# Determine correlation and plot
 cor_matrix_select = matrix()
-all_select <- WGCNA::cor(t(module_agg_select), t(ann_allun), method = "spearman")
+all_select <-
+  WGCNA::cor(t(module_agg_select), t(ann_allun), method = "spearman")
 
-pheatmap(all_select, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = TRUE, cluster_rows = TRUE, show_colnames =  FALSE)
+pheatmap(
+  all_select,
+  color = colorRampPalette(c("navy", "white", "red"))(30),
+  cluster_cols = TRUE,
+  cluster_rows = TRUE,
+  show_colnames =  FALSE
+)
 
 ###################################################################
 
 ### Some stats:
 # A list of all significant TF binding motifs (q < 0.05):
-test <- sapply(strsplit(ann_qselect$motifname, '_'), `[[`, 1)
-# How many are unique after clipping after '_'? 
+test <- sapply(strsplit(row.names(ann_qselect), '_'), `[[`, 1)
+# How many are unique after clipping after '_'? Ans: 34
 length(unique(test))
 
-all_select["red", all_select["red",] > 0.8]
+
 # For each row in the resulting matrix (all_select), how many are correlated above 0.8?
 #Select these
 count_df <- data.frame("module", "correlated>0.8")
 
-count_df <- count_df[FALSE, ]
-for (i in row.names(all_select)){
-  y <- all_select[i, all_select[i,] > 0.8]
+count_df <- count_df[FALSE,]
+for (i in row.names(all_select)) {
+  y <- all_select[i, all_select[i, ] > 0.8]
   len_list <- length(y)
   y <- list(y)
   y <- unlist(y)
   z <- names(unlist(y))
   assign(paste("matchlist", i, sep = ""), y)
   assign(paste("naam", i, sep = ""), z)
-  new_row <- cbind(i,len_list)
+  new_row <- cbind(i, len_list)
   print(new_row)
   count_df <- rbind(count_df, new_row)
 }
 colnames(count_df) <- c("module", "correlated>0.8")
 
-### To make lineplots of overlap, you need identical stage names, for the CNNs, convert stage ###
 
-### Do overlap comparison, you need:
-# 1) list of complete TFs per HOMER module
-
+### For overlap comparison: ###
+# 1) list of TFs per HOMER module
 # 2) list of filters correlated above 0.8 with a HOMER module
+# 3) list of TFs associated with respective filters
 
-# 3) list of TFs associated with a given filter
-
-# DO: use [2] to perform the 'any' function iteratively and see if any of the TFs associated with a filter match with 
-#Prepare an empty df you can fill with annotated, correlated filters 
+#Prepare an empty df you can fill with annotated, correlated filters
 correlated_filters <- data.frame()
 
 # Once you have list of correlated filters, find how many filters are
-# Annotated by Tomtom 
+# Annotated by Tomtom
 module_cor_filtname <- ls()[grep("naam", ls())]
 for (i in module_cor_filtname) {
   filt_list <- get(i)[get(i) %in% filter_q_and_motifs$Query.ID]
   i2 <- gsub("naam", "", i)
   assign(paste("ann_filt_list", i2, sep = "_"), filt_list)
   
-  # Use the annotated filters to make a table of 
+  # Use the annotated filters to make a table of
   # correlated AND annotated filters, their associated motifs, q-value and the module
   for (j in filt_list) {
-    
-    corann_filt_data <- filter_q_and_motifs[filter_q_and_motifs[,1]==j,]
+    corann_filt_data <- filter_q_and_motifs[filter_q_and_motifs[, 1] == j, ]
     corann_filt_data$cor_module <- i2
-    correlated_filters <- rbind(correlated_filters, corann_filt_data)
+    correlated_filters <-
+      rbind(correlated_filters, corann_filt_data)
     
   }
 }
 
-write.table(correlated_filters, "correlated_ann_filters.txt", header = T)
+# Add a column with correlation values
+# This creates a table of filters that are correlated to a module, the q-value of its annotation,
+# the TF motif annotation, and the correlation. Save this "master table".
+# Warning! this table still contains rows with TF motifs that are not overlapping with the
+# WGCNA module tables.
+correlated_filters$correlation <- NA
 
-# Determine overlap:
-black_select <- correlated_filters[correlated_filters$cor_module == "black",]
-black_f_in_m <- black_select[black_select$motifname %in% motif_matches[motif_matches$module == "black","ID"],]
+for (i in (1:nrow(correlated_filters))) {
+  correlated_filters[i, "correlation"] <-
+    all_select[correlated_filters[i, "cor_module"], correlated_filters[i, "Query.ID"]]
+}
 
-green_select <- correlated_filters[correlated_filters$cor_module == "green",]
-green_f_in_m <- green_select[green_select$motifname %in% motif_matches[motif_matches$module == "green","ID"],]
+write.table(correlated_filters, "correlated_ann_filters_cor.txt")
+
+# Determine overlap [inefficient coding]:
+black_select <-
+  correlated_filters[correlated_filters$cor_module == "black", ]
+black_f_in_m <-
+  black_select[black_select$motifname %in% motif_matches[motif_matches$module == "black", "ID"], ]
+
+green_select <-
+  correlated_filters[correlated_filters$cor_module == "green", ]
+green_f_in_m <-
+  green_select[green_select$motifname %in% motif_matches[motif_matches$module == "green", "ID"], ]
 unique(green_f_in_m$Query.ID)
 
-red_select <- correlated_filters[correlated_filters$cor_module == "red",]
-red_f_in_m <- red_select[red_select$motifname %in% motif_matches[motif_matches$module == "red","ID"],]
+red_select <-
+  correlated_filters[correlated_filters$cor_module == "red", ]
+red_f_in_m <-
+  red_select[red_select$motifname %in% motif_matches[motif_matches$module == "red", "ID"], ]
 
 
 turquoise_select <-
-  correlated_filters[correlated_filters$cor_module == "turquoise", ]
+  correlated_filters[correlated_filters$cor_module == "turquoise",]
 turquoise_f_in_m <-
-  turquoise_select[turquoise_select$motifname %in% motif_matches[motif_matches$module == "turquoise", "ID"], ]
+  turquoise_select[turquoise_select$motifname %in% motif_matches[motif_matches$module == "turquoise", "ID"],]
 unique(turquoise_f_in_m$Query.ID)
 
-# the listin table target. 
+# A df with all info. Only contains rows with TF motifs that overlap between filters and WGCNA modules.
+mod_CNN_TFoverlap <-
+  rbind(black_f_in_m, green_f_in_m, red_f_in_m, turquoise_f_in_m)
 
-### names to 2-letter names ###
-colnames(ann_qselect)[3] <- "GT"
-colnames(ann_qselect)[4] <- "PF"
-new_lp <- rbind(ann_qselect[row.names(ann_qselect) == "filter26 RFX5_1",],
-                module_agg[row.names(module_agg) == "turquoise",])
-new_lp <- as.data.frame(t(new_lp))
-new_lp$stage<- rownames(new_lp)
-new_lp <- melt(new_lp)
-#This is how to rescale, adjust accordingly. 25 is somewhat arbitrary
-new_lp$value[new_lp$variable == "filter26 RFX5_1"] <- new_lp$value[new_lp$variable == 
-                                                                     "filter26 RFX5_1"]*25
-### Suggestion. Perhaps it is better in the long term to adjust accordingly by scaling to 1. ###
-### Consider writing a script like that ###
+write.table(mod_CNN_TFoverlap, "mod_CNN_TFoverlap.txt")
 
-#Once adjusted, make lineplot
-p<-ggplot(new_lp, aes(x=stage, y=value, group=variable)) +
-  geom_line(aes(color=variable), size =1)+
-  geom_point(aes(color=variable), size =2.5) +
-  ylim(-1.5,1.5)
-p <- p + scale_color_brewer(palette="Set2")+
-  labs(title="Filter influence per stage",x="Stage", y = "Influence") +
-  theme_minimal(base_size = 22)
-p + theme(legend.position="top") + theme(plot.title = element_text(hjust = 0.5))
-
-# Make a plot with just TF family name (clip off the numbers)
-
-# To quantify overlap: Merge the module table with the HOMER TF table. 
-# Start with smaller motif_table.
-# Keep essential columns
-homer_foverlap <- as.data.frame(cbind(as.character(motif_table$module), as.character(motif_table$best_match)))
-ann_foverlap1 <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
-ann_foverlap2 <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[2])
-ann_fulloverlap <- as.data.frame(cbind(ann_foverlap1,ann_foverlap2))
-homer_foverlap$V2 <- as.character(homer_foverlap$V2)
-homer_foverlap$V2 <- sapply(strsplit(homer_foverlap$V2, '.motif'), function(x) x[1])
-colnames(ann_fulloverlap) <- c("filter", "motif")
-colnames(homer_foverlap) <- c("module", "motif")
-mod_ann_overlap <- merge(ann_fulloverlap, homer_foverlap, by.x = "motif", by.y = "motif", all.x = TRUE, all.y = TRUE, 
-      no.dups = TRUE)
-
-# Make an empty matrix based on unique module and filter names
-agg_mod_count <- aggregate(x = mod_ann_overlap$module, 
-                           by = list(unique.values = mod_ann_overlap$module), 
-                           FUN = length)
-overlap_mat <- matrix(0, nrow = dim(homer_foverlap[!duplicated(homer_foverlap$module), ])[1], 
-       ncol = dim(ann_fulloverlap[!duplicated(ann_fulloverlap$filter), ])[1])
-rownames(overlap_mat) <- unique(homer_foverlap$module)
-colnames(overlap_mat) <- unique(ann_fulloverlap$filter)
-
-for (m in rownames(overlap_mat)) {
-  for (n in colnames(overlap_mat)) {
-  z <- mod_ann_overlap$module == m & mod_ann_overlap$filter == n
-  overlap_mat[m,n] <- sum(z, na.rm=TRUE)
-  }
-}
-
-#Redo for larger table
-lhomer_foverlap <- as.data.frame(cbind(as.character(motif_matches$module), as.character(motif_matches$ID)))
-lhomer_foverlap <- lhomer_foverlap[-1, ]
-ann_foverlap1 <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[1])
-ann_foverlap2 <- sapply(strsplit(row.names(ann_qselect), ' '), function(x) x[2])
-ann_fulloverlap <- as.data.frame(cbind(ann_foverlap1,ann_foverlap2))
-lhomer_foverlap$V2 <- as.character(lhomer_foverlap$V2)
-lhomer_foverlap$V2 <- sapply(strsplit(lhomer_foverlap$V2, '.motif'), function(x) x[1])
-colnames(ann_fulloverlap) <- c("filter", "motif")
-colnames(lhomer_foverlap) <- c("module", "motif")
-lmod_ann_overlap <- merge(ann_fulloverlap, lhomer_foverlap, by.x = "motif", by.y = "motif", all.x = TRUE, all.y = TRUE, 
-                         no.dups = TRUE)
-write.table(lmod_ann_overlap, file = "mod_filter_overlap.txt")
-
-lagg_mod_count <- aggregate(x = lmod_ann_overlap$module, 
-                           by = list(unique.values = lmod_ann_overlap$module), 
-                           FUN = length)
-
-loverlap_mat <- matrix(0, nrow = dim(lhomer_foverlap[!duplicated(lhomer_foverlap$module), ])[1], 
-                      ncol = dim(ann_fulloverlap[!duplicated(ann_fulloverlap$filter), ])[1])
-rownames(loverlap_mat) <- unique(lhomer_foverlap$module)
-colnames(loverlap_mat) <- unique(ann_fulloverlap$filter)
-
-for (m in rownames(loverlap_mat)) {
-  for (n in colnames(loverlap_mat)) {
-    z <- lmod_ann_overlap$module == m & lmod_ann_overlap$filter == n
-    loverlap_mat[m,n] <- sum(z, na.rm=TRUE)
-  }
-}
-
-lann_homer_overlap <- t(apply(loverlap_mat, 1, "/", lagg_mod_count$x))
-pheatmap(lann_homer_overlap, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE, cluster_rows = FALSE)
+################################################################################\
 
 
-# Write tables to perform correlations in R3.5
+### Developmental and MODY genes in overlap ###
+#Check which MODY related genes are detected in the filter associated TF motifs AND the WGCNA modules.
+mody_overlap <-
+  mod_CNN_TFoverlap[grep(
+    "GCK|GLIS3|HNF1A|HNF1B|HNF4A|KCNJ11|PPARG|WFS1|INS|MNX1|NEUROG3|SLC2A2|NKX2",
+    mod_CNN_TFoverlap$motifname
+  ), ]
 
-# Calculate the correlations and plot
-#cor_matrix = matrix()
-#result <- WGCNA::cor(t(module_agg), t(ann_qselect), method = "pearson")
-#pheatmap(result, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
 
-# Calculate correlations with all filters
-# Import the influence per stage
-#setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_motifs/")
-#table_target <- read.table("table_target.txt", header = FALSE)
-#setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_comparison//")
-#table_target <- table_target[,-2]
-#table_target <- tidyr::spread(table_target, V3, V4)
-#colnames(table_target)[1] <- "Query.ID"
-#table_target$Query.ID <- paste0("filter",table_target$Query.ID)
-#table_target <- table_target[, c(1,6,3,9,8,7,5,4,2)]
-#rownames(table_target) <- table_target$Query.ID
-#table_target$Query.ID <- NULL
+# Also check the same for pancreatic developmental genes.
+# Import them from a csv compiled from papers, correct where needed:
+dev_TFs <- read.csv("common_dev_motifs.csv", header = F)
+dev_TFs <- as.character(dev_TFs$V1)
+dev_TFs[1] <- "POU5F1"
+dev_TFs[2] <- "OCT4"
+dev_TFs[32] <- "NKX6.1"
+dev_TFs[44] <- "HNF1B"
+# Add genes from MODY list (Slides Marta) and remove duplicates
+dev_TFs <-
+  c(
+    dev_TFs,
+    "PDX1",
+    "PTF1A",
+    "GATA4",
+    "GATA6",
+    "NEUROG3",
+    "GLIS3",
+    "PAX6",
+    "MNX1",
+    "RFX6",
+    "NEUROD1",
+    "NKX2",
+    "HNF1B",
+    "SOX9",
+    "NEK8",
+    "NPHP3",
+    "UBR1"
+  )
+dev_TFs <- unique(dev_TFs)
 
-###############################################################################
-### Save this for later, at the moment we're not interested in comparing    ###
-### all HOMER modules, just the selected ones.                              ###
-###############################################################################
-# cor_matrix = matrix()
-# result_all <- WGCNA::cor(t(module_agg), t(table_target), method = "pearson")
-# result_all %>% select_if(~sum(!is.na(.)) > 0)
-#
-# pheatmap(result_all, color = colorRampPalette(c("navy", "white", "red"))(30), cluster_cols = FALSE)
-#
-#
+# Once collapsed all into a single string, check if dev. genes occur in the
+# WGCNA module vs. CNN filter overlap df:
+dev_TFs <- paste(dev_TFs, collapse = " ")
+dev_TFs <- gsub(" ", "|", dev_TFs)
+dev_overlap <- mod_CNN_TFoverlap[grep(dev_TFs,
+                                      mod_CNN_TFoverlap$motifname),]
+
+# Use the dev_TFs df to show how overlap between WGCNA modules and CNN filters contains expected
+# dev genes.
+write.table(dev_overlap, "dev_overlap.txt")
