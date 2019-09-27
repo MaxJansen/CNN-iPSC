@@ -21,8 +21,8 @@ library(gplots)
 # in a single directory, then go there:
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_motifs/")
 #1. tomtom, this is the main matching table
-tomtom <- read.csv("tomtom.txt", header = TRUE, sep = "\t")
-colnames(tomtom)[colnames(tomtom) == "X.Query.ID"] <- "Query.ID"
+full_tomtom <- read.csv("tomtom.txt", header = TRUE, sep = "\t")
+colnames(full_tomtom)[colnames(full_tomtom) == "X.Query.ID"] <- "Query.ID"
 
 #2. PWMs_adapted.meme, this contains PWM_*number* and biological names
 tf_pwms <- readLines("PWMs_adapted.meme")
@@ -37,7 +37,7 @@ table_target <- read.table("table_target.txt", header = FALSE)
 #Steps to clean and merge merge tomtom and filter influence:
 filter_infl$Query.ID <- paste0("filter", row.names(filter_infl))
 filter_infl <- filter_infl[, -c(1, 3, 4)]
-tomtom <- tomtom[, c(1, 2, 6)]
+tomtom <- full_tomtom[, c(1, 2, 6)]
 tomtom_infl <-
   merge(tomtom,
         filter_infl,
@@ -97,16 +97,8 @@ ann_unannotated_select <- ann_unannotated[ann_unannotated$std >0.1,]
 ###    End of Part 1    ###
 
 ###    Part 2: Final Tables and plots    ###
-#Largest table, merge Biological TF names, filter influence and influence per stage
-#!!! Warning: you will lose unannoted filter influence per stage rows !!!
-
-# Make some general influence plots for filters
-#Plot
-g <- ggplot(standard_annon, aes(x =annotation, y = std))
-g + geom_col(aes(fill=annotation)) + theme_minimal() +scale_fill_brewer(palette = "RdYlBu") + ggtitle("Annotated filter influence") +
-  xlab("Annotation") + ylab("Standard deviation") + theme(plot.title = element_text(hjust = 0.5))
-
-
+# Largest table, merge Biological TF names, filter influence and influence per stage
+# !!! Warning: you will lose unannoted filter influence per stage rows !!!
 
 ann_complete <-
   merge(
@@ -231,42 +223,7 @@ p <-
 # Horizontal bar plot
 p + coord_flip() + theme(legend.position = "none")
 
-#Superheat
-superheat(as.matrix(ann_qselect2),
-          
-          # set heatmap color map
-          heat.pal = rev(brewer.pal(11, "RdBu")),
-          heat.na.col = "white",
-          
-          # order rows in increasing order of donations
-          pretty.order.rows = T,
-          
-          # grid line colors
-          grid.vline.col = "black",
-          
-          # right plot: STD
-          yr = bar_select$std,
-          yr.plot.type = "bar",
-          yr.axis.name = "Filter influence",
-          yr.plot.size = 0.5,
-          yr.bar.col = "black",
-          yr.obs.col = "white",
-          
-
-          
-          # left labels
-          left.label.size = 0.5,
-          left.label.text.size = 3,
-          left.label.col = adjustcolor("white", alpha.f = 0.3),
-          
-          # bottom labels
-          bottom.label.size = 0.01,
-          bottom.label.col = "white",
-          bottom.label.text.angle = 90,
-          bottom.label.text.alignment = "right",
-          bottom.label.text.size = 4)
-
-#Superheat
+#Superheat q < 0.1
 superheat(as.matrix(ann_qselect3),
           
           # set heatmap color map
@@ -301,6 +258,42 @@ superheat(as.matrix(ann_qselect3),
           bottom.label.text.alignment = "right",
           bottom.label.text.size = 4,
           )
+
+#Superheat q < 0.1 descending std order
+superheat(as.matrix(ann_qselect3),
+          
+          # set heatmap color map
+          heat.pal = rev(brewer.pal(11, "RdBu")),
+          heat.na.col = "white",
+          
+          # order rows in increasing order of donations
+          order.rows = order(bar_select3$std),
+          
+          # grid line colors
+          grid.vline.col = "black",
+          
+          # right plot: STD
+          yr = bar_select3$std,
+          yr.plot.type = "bar",
+          yr.axis.name = "Filter influence",
+          yr.plot.size = 0.5,
+          yr.bar.col = "black",
+          yr.obs.col = "white",
+          
+          
+          
+          # left labels
+          left.label.size = 0.5,
+          left.label.text.size = 3,
+          left.label.col = adjustcolor("white", alpha.f = 0.3),
+          
+          # bottom labels
+          bottom.label.size = 0.01,
+          bottom.label.col = "white",
+          bottom.label.text.angle = 90,
+          bottom.label.text.alignment = "right",
+          bottom.label.text.size = 4,
+)
 
 superheat(as.matrix(ann_qselectun),
           
