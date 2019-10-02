@@ -15,6 +15,8 @@ The scripts fall in these three categories:
   When you have the 'sample_beds.txt'-file (see tutorial steps), run: 'steps_after_sample_beds.sh'.
   - ['Removing overlap'](./preprocess/2.remove_overlap). Remove all peaks
   occurring in any of the 8 stages of iPSC samples from the negative training data.
+  You will need a file containing the peaks occurring in iPSC samples. These are provided in the directory.
+  If you want to make a similar file *de novo* see the scripts in 'Get dnase' and 'Final step'.
   - ['Shuffle and Zeros'](./preprocess/3.shuffle_and_zeros) Use only a shuffled
   subset of all available negative training sequences.
   - ['Final step'](./preprocess/final_step) Append the negative training data
