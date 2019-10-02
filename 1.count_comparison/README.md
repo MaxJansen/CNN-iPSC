@@ -11,4 +11,3 @@ These are:
 
 After assessing the test accuracies in the next directory (training), a single
 best model was chosen. The best model was trained on the 1CPM dataset.
-test
