@@ -9,14 +9,14 @@ provided in the scripts.
 The scripts fall in these three categories:
 
 1. **Preprocessing** data.
-  1. ['Get dnase'](./preprocess/1.get_dnase). This is the ENCODE/Roadmap data
+  - ['Get dnase'](./preprocess/1.get_dnase). This is the ENCODE/Roadmap data
   used as negative training data. These steps are similar to the tutorial in
   [Basset](https://help.github.com/en/articles/basic-writing-and-formatting-syntax#section-links).
-  2. ['Removing overlap'](./preprocess/2.remove_overlap). Remove all peaks
+  - ['Removing overlap'](./preprocess/2.remove_overlap). Remove all peaks
   occurring in any of the 8 stages of iPSC samples from the negative training data.
-  3. ['Shuffle and Zeros'](./preprocess/3.shuffle_and_zeros) Use only a shuffled
+  - ['Shuffle and Zeros'](./preprocess/3.shuffle_and_zeros) Use only a shuffled
   subset of all available negative training sequences.
-  4. ['Final step'](./preprocess/final_step) Append the negative training data
+  - ['Final step'](./preprocess/final_step) Append the negative training data
   to the islet iPSC sample data, and partition these in training, validation,
   and test sets.
 2. **Training** the select CNN architecture on the preprocessed data.
