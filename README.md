@@ -2,3 +2,8 @@
 # CNN-iPSC
 
 One paragraph of project description
+
+
+## On GitHub_data:
+Not all inputs and outputs of the scripts will be listed [here](./GitHub_data).
+Trained models and training data are especially large files. 
