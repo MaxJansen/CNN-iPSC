@@ -19,5 +19,4 @@ on the 1CPM dataset.
 containing the narrowpeaks-files.
 2. Save this output for the three filtering methods in .csv-format,
 with stages as rows, and methods as columns.
-3. Run the [plotting script](./peaks_barplot.R) and save the plot. It should look
-like [this](../GitHub_data/peaks_before_preprocessing.pdf)
+3. Run the [plotting script](./peaks_barplot.R) and save the plot. 
