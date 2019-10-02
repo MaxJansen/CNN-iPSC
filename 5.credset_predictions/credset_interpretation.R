@@ -26,6 +26,7 @@ setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
 cred_set_results <- read.table("credible_set_pred.txt")
 name_var_seq <- read.table("unique_all_name_seq.csv", header = TRUE, sep = ",")
 name_to_loc <- read.table("HRC_credset.snp_ann.txt")
+mature_table <- read.table("CNN_res.short.190919.txt")
 
 
 # Calculate the differences for each variant and each stage by subtracting alternating rows
@@ -33,6 +34,9 @@ name_to_loc <- read.table("HRC_credset.snp_ann.txt")
 # if the variant increases chromatin openness.
 diff <-
   cred_set_results[seq(2, nrow(cred_set_results), 2), ] - cred_set_results[seq(1, nrow(cred_set_results), 2), ]
+
+# Get the .fasta-files in str-format
+name_var_seq$sequences <- as.character(name_var_seq$sequences)
 
 # Boxplot to compare stages
 # First put the stages in chronological order
@@ -102,6 +106,8 @@ plot(qfinal)
 #To compare diffs to position PPA, merge dataframes
 # Remove ">" sign between nucleotides in name_to_loc rsids
 name_to_loc$V1 <- gsub(">", "", name_to_loc$V1)
+# Same removal for mature_table
+mature_table$variant <- gsub(">", "", mature_table$variant)
 #Tailor name_to_loc
 name_to_loc2 <- name_to_loc[, -3]
 colnames(name_to_loc2) <- c("name_only", "gen_loc")
@@ -113,6 +119,20 @@ diff_name <- diff_name[ , c(9,1,2,3,4,5,6,7,8)]
 loc_diff <- merge(diff_name, name_to_loc2, by.x = "name", by.y = "name_only")
 loc_diff <- loc_diff[, c(10,1:9)]
 
+### Largest table ###
+diff_name_qval <- data.frame(diff_name, qvalue_final)
+diff_name_qval$al_ref <- substring(name_var_seq$sequences, 500, 500)[seq(1,nrow(name_var_seq),2)]
+diff_name_qval$al_alt <- substring(name_var_seq$sequences, 500, 500)[seq(2,nrow(name_var_seq),2)]
+largest_full <- merge(diff_name_qval, name_to_loc2, by.x = "name", by.y = "name_only")
+largest_noPPA <- merge(largest_full, mature_table[,c("variant", "lowest_Q")], by.x = "name", by.y = "variant")
+# Clean the table up
+largest_noPPA <- largest_noPPA[ ,c(1,18:21,2:17)]
+colnames(largest_noPPA)[1] <- "rsID"
+colnames(largest_noPPA)[5] <- "mature_islet_Q"
+colnames(largest_noPPA)[6:13] <- paste(colnames(largest_noPPA)[6:13], "_diff")
+colnames(largest_noPPA)[14:21] <- gsub(".1", "_q", colnames(largest_noPPA)[14:21])
+write.table(largest_noPPA, file = "final_CNN_pred.txt", sep = "\t")
+
 ### Warning! optional branch ahead ###
 #To keep whole names, do this:
 full_loc_diff <- merge(diff_name, name_to_loc, by.x = "name", by.y = "V1")
@@ -123,13 +143,23 @@ full_loc_diff <- full_loc_diff[, c(10,11,1:9)]
 ### End of first merge ###
 
 ###Key next step: importing PPAg ###
+# This script makes a single df: "dataset"
+# As well as an R object: "cred" (list of dfs)
+# They contain the same credible set signals
 
 setwd("per_locus_credsets/")
 
-file_list <- list.files()
+file_list <- list.files(pattern = ".txt$")
+cred = list()
 
 for (file in file_list){
+  # Making the named list of df's, cred
+  name = gsub("credible_set_Eur_","",gsub(".txt","",file))
+  df = read.table(file,header=T,sep="\t")
+  cred[[name]] = df
+  print(file)
   
+  # Making the single df: "dataset"
   # if the merged dataset does exist, append to it
   if (exists("dataset")){
     temp_dataset <-read.table(file, header=TRUE, sep="\t")
@@ -141,11 +171,26 @@ for (file in file_list){
   if (!exists("dataset")){
     dataset <- read.table(file, header=TRUE, sep="\t")
   }
-  
-  
-  
 }
 
+# Get unique locations to find q-values
+largest_unique <- largest_noPPA[!duplicated(largest_noPPA$gen_loc),]
+
+# Append q-values to an R object that contains credible sets for each signal
+for (sign in 1:length(cred)) {
+  for (var in 1:nrow(cred[[sign]])) {
+    position=paste0(cred[[sign]][var,]$Chr,":", cred[[sign]][var,]$Pos)
+    if (position %in% largest_unique$gen_loc) {
+      cred[[sign]][var,5:12] <- subset(largest_unique, gen_loc == position, 14:21)
+    }
+  }
+}
+
+#Save cred, an R object: A list containing df's for each credible set
+saveRDS(cred, file = "cred_sets.rds", version = 2)
+
+# Mind you, there are more unique locations than rsID's/variants/q-values
+# 126013 unique locations vs. 109779 unique rsID rows
 
 
 setwd("~/Oxford 2.0/Scripts/CNN_project/Data/better_predictions/")
@@ -339,11 +384,16 @@ for (i in 1:nrow(qvalselect_nn)){
 }
 qval_sign_matrix
 
-pheatmap::pheatmap(thresh_nn, color = colorRampPalette(rev(brewer.pal(
+# Store the "pretty heatmap" that we'll use from now on (this one has stars for significance)
+p <- pheatmap::pheatmap(thresh_nn, color = colorRampPalette(rev(brewer.pal(
   n = 10, name =
     "RdBu"
 )))(16), cluster_cols = FALSE, display_numbers = qval_sign_matrix)
 
+# The "pheatmap" object is stored as a list of lists, containing information about the heatmap
+# (obviously), and it's properties. To get the rownames as ordered in the heatmap after clustering:
+final_pheatmap_order <- p$tree_row$labels[p$tree_row$order]
+write.table(final_pheatmap_order, file = "final_pheatmap_row_order.txt")
 
 # Write some tables:
 write.table(loc_PPA_diff, file = "loc_PPA_diff.txt", quote = FALSE, sep = "\t")

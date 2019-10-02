@@ -91,7 +91,7 @@ ann_unannotated <-
 
 #For ann_unannotated, only select filters that have any "reasonable" influence: std > 0.001
 ann_unannotated <- ann_unannotated[ann_unannotated$std >0.001,]
-ann_unannotated_select <- ann_unannotated[ann_unannotated$std >0.1,]
+ann_unannotated_select <- ann_unannotated[ann_unannotated$std >0.01,]
 ######################################################################
 
 ###    End of Part 1    ###
@@ -112,28 +112,24 @@ ann_complete <- ann_complete[, -c(2, 4)]
 ann_complete$motifname <-
   gsub(".motif", "" , ann_complete$motifname)
 
-#q-value threshold < 0.05 and std > 0.1
-ann_qselect <- ann_complete[ann_complete$q.value < 0.05, ]
+#Select subset with std > 0.1
+ann_qselect <- ann_complete
 ann_qselect <- ann_qselect[ann_qselect$std > 0.1, ]
 rownames(ann_qselect) <-
   paste(ann_qselect$Query.ID, ann_qselect$motifname, sep = " ")
 
 ann_qselect <- ann_qselect[, -c(1:4)]
 ann_qselect <- as.matrix(ann_qselect)
-heatmap.2(
-  ann_qselect,
-  col = redblue,
-  dendrogram = "row",
-  Colv = NA,
-  key = T,
-  cexRow = 0.6,
-  margins = c(4, 13),
-  density.info = "none",
-  keysize = 1
-)
+
 
 #q-value threshold < 0.05 and reduce rows by placing TF names in a single row per filter
 ann_qselect2 <- ann_complete[ann_complete$q.value < 0.05, ]
+
+# Quick check, how many motif-family names? Ans: 115
+test <- ann_qselect2$motifname
+length(unique(sapply(strsplit(test, split = '_', fixed = TRUE), `[[`, 1)))
+
+# Continue making the matrix
 ann_qselect2 <- ann_qselect2[!duplicated(ann_qselect2$Query.ID), ]
 ann_qselect2$Query.ID <- gsub("filter", "f", ann_qselect2$Query.ID)
 rownames(ann_qselect2) <-
@@ -143,6 +139,7 @@ ann_qselect2 <- as.matrix(ann_qselect2)
 rownames(ann_qselect2) <-
   unlist(strsplit(rownames(ann_qselect2), split = '_', fixed = TRUE))[seq(1, 2 *
                                                                             length(rownames(ann_qselect2)), 2)]
+
 
 # Different qvalue threshold for heatmap
 ann_qselect3 <- ann_complete[ann_complete$q.value < 0.1, ]
@@ -170,6 +167,7 @@ bar_select3$full_name <-
 bar_select3$full_name <-
   factor(bar_select3$full_name, levels = bar_select3$full_name[order(bar_select3$std)])
 
+
 # Select heatmap for unannotated. Fix the rownames later, because you need to add the annotation
 ann_qselectun <- ann_unannotated
 ann_qselectun <- ann_qselectun[!duplicated(ann_qselectun$Query.ID), ]
@@ -186,20 +184,29 @@ bar_selectun$full_name <-
   paste(bar_selectun$Query.ID)
 bar_selectun <- within(bar_selectun, rm(Query.ID))
 
-heatmap.2(
-  ann_qselect2,
-  col = redblue,
-  dendrogram = "row",
-  Colv = NA,
-  key = T,
-  cexRow = 0.6,
-  margins = c(4, 13),
-  density.info = "none",
-  keysize = 1
-)
-pheatmap(ann_qselect2,
-         color = colorRampPalette(c("navy", "white", "red"))(30),
-         cluster_cols = FALSE)
+
+
+# ann_unannotated_select (std > 0.1) prepare for superheat
+ann_std_select <- ann_unannotated_select[!duplicated(ann_unannotated_select$Query.ID), ]
+ann_std_select$Query.ID <- gsub("filter", "f", ann_std_select$Query.ID)
+ann_std_select$annotation <- gsub("\\.", "", ann_std_select$annotation)
+rownames(ann_std_select) <- paste(ann_std_select$Query.ID, ann_std_select$annotation, sep = " ")
+ann_std_select <- ann_std_select[, -c(1:3)]
+ann_std_select <- as.matrix(ann_std_select)
+
+# ann_unannotated_select (std > 0.1) bar for superheat
+bar_std <- ann_unannotated_select[, c(1:3)]
+bar_std <- bar_std[!duplicated(bar_std$Query.ID), ]
+bar_std$Query.ID <- gsub("filter", "f", bar_std$Query.ID)
+bar_std$full_name <-
+  paste(bar_std$Query.ID, bar_std$annotation, sep = " ")
+bar_std$full_name <-
+  factor(bar_std$full_name, levels = bar_std$full_name[order(bar_std$std)])
+bar_std <- bar_std[, -c(1,2)]
+bar_std$full_name <- gsub("\\.", "", bar_std$full_name)
+bar_std$full_name <-
+  factor(bar_std$full_name, levels = bar_std$full_name[order(bar_std$std)])
+
 
 ###    Make a barplot of std (influence per filter)    ###
 bar_select <- ann_complete[, c(1:4)]
@@ -223,7 +230,8 @@ p <-
 # Horizontal bar plot
 p + coord_flip() + theme(legend.position = "none")
 
-#Superheat q < 0.1
+
+#Superheat q < 0.1 descending std order
 superheat(as.matrix(ann_qselect3),
           
           # set heatmap color map
@@ -231,7 +239,7 @@ superheat(as.matrix(ann_qselect3),
           heat.na.col = "white",
           
           # order rows in increasing order of donations
-          pretty.order.rows = T,
+          order.rows = order(bar_select3$std),
           
           # grid line colors
           grid.vline.col = "black",
@@ -257,9 +265,9 @@ superheat(as.matrix(ann_qselect3),
           bottom.label.text.angle = 90,
           bottom.label.text.alignment = "right",
           bottom.label.text.size = 4,
-          )
+)
 
-#Superheat q < 0.1 descending std order
+# Heatmap of q < 0.1 based on clustering 
 superheat(as.matrix(ann_qselect3),
           
           # set heatmap color map
@@ -267,7 +275,7 @@ superheat(as.matrix(ann_qselect3),
           heat.na.col = "white",
           
           # order rows in increasing order of donations
-          order.rows = order(bar_select3$std),
+          pretty.order.rows = T,
           
           # grid line colors
           grid.vline.col = "black",
@@ -321,6 +329,81 @@ superheat(as.matrix(ann_qselectun),
           left.label.size = 0.5,
           left.label.text.size = 3,
           left.label.col = adjustcolor("white", alpha.f = 0.3),
+          
+          # bottom labels
+          bottom.label.size = 0.01,
+          bottom.label.col = "white",
+          bottom.label.text.angle = 90,
+          bottom.label.text.alignment = "right",
+          bottom.label.text.size = 4,
+)
+
+superheat(as.matrix(ann_std_select),
+          
+          # set heatmap color map
+          heat.pal = rev(brewer.pal(11, "RdBu")),
+          heat.na.col = "white",
+
+          # order rows for clustering
+          pretty.order.rows = T,
+          
+          # grid line colors
+          grid.vline.col = "black",
+          
+          # right plot: STD
+          yr = bar_std$std,
+          yr.plot.type = "bar",
+          yr.axis.name = "Filter influence",
+          yr.plot.size = 0.5,
+          yr.bar.col = "black",
+          yr.obs.col = "white",
+          
+          
+          
+          # left labels
+          force.left.label = T,
+          left.label.size = 0.5,
+          left.label.text.size = 3,
+          left.label.col = adjustcolor("white", alpha.f = 0.3),
+          left.label.text.alignment = "right",
+          
+          # bottom labels
+          bottom.label.size = 0.01,
+          bottom.label.col = "white",
+          bottom.label.text.angle = 90,
+          bottom.label.text.alignment = "right",
+          bottom.label.text.size = 4,
+          legend.text.size = 10,
+          padding = 0.05
+)
+
+superheat(as.matrix(ann_std_select),
+          
+          # set heatmap color map
+          heat.pal = rev(brewer.pal(11, "RdBu")),
+          heat.na.col = "white",
+          
+          # order rows for clustering
+          order.rows = order(bar_std$std),
+          
+          # grid line colors
+          grid.vline.col = "black",
+          
+          # right plot: STD
+          yr = bar_std$std,
+          yr.plot.type = "bar",
+          yr.axis.name = "Filter influence",
+          yr.plot.size = 0.5,
+          yr.bar.col = "black",
+          yr.obs.col = "white",
+          
+          
+          
+          # left labels
+          left.label.size = 0.5,
+          left.label.text.size = 3,
+          left.label.col = adjustcolor("white", alpha.f = 0.3),
+          left.label.text.alignment = "right",
           
           # bottom labels
           bottom.label.size = 0.01,
