@@ -12,7 +12,7 @@ The scripts fall in these three categories:
   - ['Get dnase'](./preprocess/1.get_dnase). This is the ENCODE/Roadmap data
   used as negative training data. The first steps are identical to the tutorial in
   [Basset](https://help.github.com/en/articles/basic-writing-and-formatting-syntax#section-links).
-  When you have the 'sample_beds.txt'-file, run 'steps_after_sample_beds.sh'.
+  When you have the 'sample_beds.txt'-file (see tutorial steps), run: 'steps_after_sample_beds.sh'.
   - ['Removing overlap'](./preprocess/2.remove_overlap). Remove all peaks
   occurring in any of the 8 stages of iPSC samples from the negative training data.
   - ['Shuffle and Zeros'](./preprocess/3.shuffle_and_zeros) Use only a shuffled
