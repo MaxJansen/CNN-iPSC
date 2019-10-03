@@ -18,7 +18,7 @@ The scripts fall in these three categories:
   You will need a file containing the peaks occurring in iPSC samples. These are provided in the directory.
   If you want to make a similar file *de novo* see the scripts in 'Get dnase' and 'Final step'.
   - ['Shuffle and Zeros'](./preprocess/3.shuffle_and_zeros) Use only a shuffled
-  subset of all available negative training sequences.
+  subset of all available negative training sequences. Just run [`shuffle.sh`](./preprocess/3.shuffle_and_zeros/.shuffle.sh)
   - ['Final step'](./preprocess/final_step) Append the negative training data
   to the islet iPSC sample data, and partition these in training, validation,
   and test sets.

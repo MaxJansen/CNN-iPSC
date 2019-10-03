@@ -1,3 +1,5 @@
+#!/apps/well/R/3.4.3/bin/Rscript
+
 cpm <- read.table("neg_1CPM_noverlap_shuf.bed", header = F)
 original <- read.table("neg_original_noverlap_shuf.bed", header = F)
 
