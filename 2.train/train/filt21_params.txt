@@ -1,0 +1,16 @@
+conv_filters	320
+conv_filters	480
+conv_filters	960
+conv_filter_sizes      21	
+conv_filter_sizes	9
+conv_filter_sizes	7
+pool_width	3
+pool_width	4
+pool_width	4
+hidden_units	1000
+hidden_units	1000
+hidden_dropouts	0.5
+hidden_dropouts	0.5
+learning_rate	0.01
+momentum	0.9
+optimization	adam

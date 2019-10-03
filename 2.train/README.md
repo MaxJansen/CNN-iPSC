@@ -23,8 +23,10 @@ The scripts fall in these three categories:
   subset of all available negative training sequences. Just run [`shuffle.sh`](./preprocess/3.shuffle_and_zeros/shuffle.sh)
   - ['Final step'](./preprocess/final_step) Append the negative training data
   to the islet iPSC sample data, and partition these in training, validation,
-  and test sets.
+  and test sets. Also, clips off the negative dataset column, so algorithm
+  doesn't optimise predicting these correctly.
 2. **Training** the select CNN architecture on the preprocessed data.
+
 3. **Testing** the model accuracy.
 
  [link](../some_locattion)

@@ -3,14 +3,6 @@
 ##################################################################
 
 #!/bin/bash
-#original chr1chr2
-qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N original_train -e original_train.err -o original_training.out Basset_train.sh
-
-#original random
-qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N original_random_train -e original_random_train.err -o original_random_training.out Basset_train.sh
-
-#1CPM chr1chr2
-qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N 1CPM_chr1chr2_train -e 1CPM_chr1chr2_train.err -o 1CPM_chr1chr2_training.out Basset_train.sh
 
 #1CPM random
 qsub -q gpu8.q -l gpu=2 -l gputype=p100  -V -cwd -N one_CPM_random_train -e 1CPM_random_train.err -o 1CPM_random_train.out Basset_train.sh
