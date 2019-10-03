@@ -3,9 +3,10 @@
 Many architectures and hyperparameters have been tested
 beforehand. Only the final hyperparameter settings and model(s) made it to this
 directory. All scripts, except ['plot_predict_test.R'](./plot_predict_test.R),
-run on Elder and often require GPU usage. Links to the necessary modules are
+run on Elder and often require GPU usage. Links to the necessary modules and packages are
 provided in the scripts.
 
+# Order
 The scripts fall in these three categories:
 
 1. **Preprocessing** data.
