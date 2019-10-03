@@ -6,14 +6,15 @@ directory. All scripts, except ['plot_predict_test.R'](./plot_predict_test.R),
 run on Elder and often require GPU usage. Links to the necessary modules and packages are
 provided in the scripts.
 
-# Order
+## Order
 The scripts fall in these three categories:
 
 1. **Preprocessing** data.
   - ['Get dnase'](./preprocess/1.get_dnase). This is the ENCODE/Roadmap data
   used as negative training data. The first steps are identical to the tutorial in
-  [Basset](https://help.github.com/en/articles/basic-writing-and-formatting-syntax#section-links).
-  When you have the 'sample_beds.txt'-file (see tutorial steps), run: 'steps_after_sample_beds.sh'.
+  [Basset](https://github.com/davek44/Basset/blob/master/tutorials/prepare_compendium.ipynb).
+  When you have the 'sample_beds.txt'-file (see tutorial steps), run: 'steps_after_sample_beds.sh'
+  to get 1000 bp peaks of these negative set sequences.
   - ['Removing overlap'](./preprocess/2.remove_overlap). Remove all peaks
   occurring in any of the 8 stages of iPSC samples from the negative training data.
   You will need a file containing the peaks occurring in iPSC samples. These are provided in the directory.
