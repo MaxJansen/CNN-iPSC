@@ -26,9 +26,14 @@ The scripts fall in these three categories:
   and test sets. Also, clips off the negative dataset column, so algorithm
   doesn't optimise predicting these correctly.
 2. **Training** the select CNN architecture on the preprocessed data.
- - Once you have the `1CPM_islets.h5` file, you can use that for training.
+ - Once you have the `1CPM_islets.h5` file, you can use that as training data.
  - The model [hyperparameter settings](./train/filt21_params.txt) are in: `/well/mccarthy/users/maxlouis/oxford2/CNN_project/better_train_CNN/filt21_params.txt`
  on Elder.
+ - The training (and testing) happens in: `/well/mccarthy/users/maxlouis/oxford2/CNN_project/better_train_CNN/1CPM_random`.
+ - This is quite straightforward. The necessary paths for training data and settings
+ are in the `Basset_train.sh` script. You can run it on the GPU with the
+ `Basset_submit_train.sh` script. Just make sure the GPUtype is identical in both scripts
+(you can switch from `p100` to `k80`, depending on which one is free).
 3. **Testing** the model accuracy.
 
  [link](../some_locattion)
