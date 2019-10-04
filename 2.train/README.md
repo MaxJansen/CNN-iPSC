@@ -35,6 +35,11 @@ The scripts fall in these three categories:
  `Basset_submit_train.sh` script. Just make sure the GPUtype is identical in both scripts
 (you can switch from `p100` to `k80`, depending on which one is free).
 3. **Testing** the model accuracy.
-For testing, do not use the `Basset_test.py` script. It does not give you the
+For testing, do not use the `Basset_test.py` or the `Basset_test.sh` script. It is the
+standard testing script in Basset, but it does not give you the
 freedom to plot all 8 stage lines in one ROC or PR plot.
 Instead, use `Basset_predict.py`.
+
+4. **Plotting** the test results (locally). Use the `iter1.test.txt` output as the test set
+predictions. `plot_predict_test.R` takes these predictions and compares them to
+`final_test_set_act.txt` to calculate the ROC and PR and plot the respective curves.
