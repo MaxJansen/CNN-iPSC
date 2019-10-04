@@ -1,4 +1,4 @@
-# Training and testing CNNs
+# Preprocessing, training and testing CNNs
 ## General
 Many architectures and hyperparameters have been tested
 beforehand. Only the final hyperparameter settings and model(s) made it to this
