@@ -11,7 +11,7 @@ Here is a brief description:
 Before that, the HOMER motif database was converted to the meme-format.
 You can also find the scripts to select various thresholds and plot the output in heatmaps and barplots. Run these locally on Rstudio.
 
-4. [`homer_comparison`](./4/homer_comparison) Compare the temporal influence of the transcription factor binding motifs associated with filters in the first layer of the CNN to those of the WGCNA modules. Used to create the table showing overlap between the two. Run locally on Rstudio. Requires output from the `motifs` scripts.
+4. [`homer_comparison`](./4.homer_comparison) Compare the temporal influence of the transcription factor binding motifs associated with filters in the first layer of the CNN to those of the WGCNA modules. Used to create the table showing overlap between the two. Run locally on Rstudio. Requires output from the `motifs` scripts.
 
 5. [`credset_predictions`](./5.credset_predictions) Predictions on the credible set data. Predictions were performed on the GPU with a fasta-file of ref and var sequences. The output of these predictions were compared and plotted locally.
 
