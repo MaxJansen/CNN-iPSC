@@ -23,23 +23,18 @@ The scripts fall in these three categories:
   subset of all available negative training sequences. Just run [`shuffle.sh`](./preprocess/3.shuffle_and_zeros/shuffle.sh)
   - ['Final step'](./preprocess/final_step) Append the negative training data
   to the islet iPSC sample data, and partition these in training, validation,
-  and test sets. Also, clips off the negative dataset column, so algorithm
-  doesn't optimise predicting these correctly.
+  and test sets. Also, clips off the negative dataset column, because the algorithm
+  shouldn't optimise predicting these.
 2. **Training** the select CNN architecture on the preprocessed data.
  - Once you have the `1CPM_islets.h5` file, you can use that as training data.
  - The model [hyperparameter settings](./train/filt21_params.txt) are in: `/well/mccarthy/users/maxlouis/oxford2/CNN_project/better_train_CNN/filt21_params.txt`
  on Elder.
  - The training (and testing) happens in: `/well/mccarthy/users/maxlouis/oxford2/CNN_project/better_train_CNN/1CPM_random`.
  - This is quite straightforward. The necessary paths for training data and settings
- are in the `Basset_train.sh` script. You can run it on the GPU with the
+ are in the `Basset_train.sh` script. You can run it on the GPU by running
  `Basset_submit_train.sh` script. Just make sure the GPUtype is identical in both scripts
 (you can switch from `p100` to `k80`, depending on which one is free).
 3. **Testing** the model accuracy.
-
- [link](../some_locattion)
-
-
-## On testing and random test and validation peaks
-1. morestuff
-2. morestuff
-3. morestuff
+For testing, do not use the `Basset_test.py` script. It does not give you the
+freedom to plot all 8 stage lines in one ROC or PR plot.
+Instead, use `Basset_predict.py`.
